@@ -1,1 +1,2 @@
 from .advection_diffusion import AdvectionDiffusionToy
+from .toy_custom_likelihood import ToyCustomLikelihood2D

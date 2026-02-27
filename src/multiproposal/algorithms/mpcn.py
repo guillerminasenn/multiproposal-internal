@@ -19,7 +19,7 @@ def mpcn_step(x, problem, rng, rho=0.9, n_props=10):
     weights = np.exp(log_w)
 
     idx = rng.choice(n_props + 1, p=weights / weights.sum())
-    return candidates[idx]
+    return candidates[idx], idx
 
 
 def mpcn_chain(x0, problem, rng, n_iters, rho=0.9, n_props=10):

@@ -128,7 +128,7 @@ def mess_step(
                     abs_angular_dist = np.abs(psi_sorted[:, None] - psi_sorted[None, :])
                     D = np.minimum(abs_angular_dist, 2 * np.pi - abs_angular_dist)
 
-                elif distance_metric== 'euclidean':
+                elif distance_metric== 'euclidean' or distance_metric == 'euclidean_squared':
                     # Compute the proposals corresponding to the sorted angles (NOTE: inefficient, because I already have them above)
                     x_psi_sorted = (
                         problem.prior_mean()[:, np.newaxis]
@@ -138,7 +138,11 @@ def mess_step(
 
                     # Compute the Euclidean distance matrix between these proposals
                     diff = x_psi_sorted[:, :, np.newaxis] - x_psi_sorted[:, np.newaxis, :]  # (d, n, n)
-                    D = np.linalg.norm(diff, axis=0)
+
+                    if distance_metric == 'euclidean':
+                        D = np.linalg.norm(diff, axis=0)
+                    elif distance_metric == 'euclidean_squared':
+                        D = np.sum(diff**2, axis=0)
 
                 # Compute the transition matrix
 

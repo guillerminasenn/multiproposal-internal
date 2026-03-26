@@ -11,9 +11,18 @@ Goal: outputs are stored under run-specific folders that uniquely identify datas
 - Store samples, metrics, diagnostics, and derived tables under the run-specific estimations directory.
 - Store figures under the matching run-specific reports directory.
 - Write the full configuration to config.json in the estimations directory.
+- Reuse cached outputs when present: load existing samples/metrics from the run directory and skip re-running chains.
 
 ## Figures
 - Apply the publication style from reports/figure_style.py for all plots.
+
+## Naming conventions
+- Save chain outputs as <method>_P{P}_rho{rho}_seed{seed}.npz (or <method>_rho{rho}_seed{seed}.npz for pCN).
+- Save metrics next to the chain file as <method>_P{P}_rho{rho}_seed{seed}_metrics.json.
+- Store algorithm-specific diagnostics (e.g., mPCN diagnostics) alongside the chain files.
+
+## Variants and sub-experiments
+- For secondary experiments that share the same base run configuration (e.g., random-start sweeps), save under a subfolder of the main run directory (for example, estimations_dir/random_start).
 
 ## Suggested helper
 Use multiproposal.utils.run_paths.build_run_dirs to build:

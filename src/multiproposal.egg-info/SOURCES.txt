@@ -13,6 +13,7 @@ src/multiproposal/algorithms/mess.py
 src/multiproposal/algorithms/mh.py
 src/multiproposal/algorithms/mpcn.py
 src/multiproposal/algorithms/mtpcn.py
+src/multiproposal/algorithms/pcn.py
 src/multiproposal/algorithms/utils.py
 src/multiproposal/data/__init__.py
 src/multiproposal/data/advection_diffusion.py
@@ -23,6 +24,7 @@ src/multiproposal/kernels/__init__.py
 src/multiproposal/kernels/stationary.py
 src/multiproposal/plotting/__init__.py
 src/multiproposal/plotting/diagnostics.py
+src/multiproposal/plotting/figure_style.py
 src/multiproposal/problems/__init__.py
 src/multiproposal/problems/advection_diffusion.py
 src/multiproposal/problems/base.py
@@ -30,3 +32,5 @@ src/multiproposal/problems/gp_regression.py
 src/multiproposal/problems/logistic_regression.py
 src/multiproposal/problems/sbd.py
 src/multiproposal/problems/toy_custom_likelihood.py
+src/multiproposal/utils/__init__.py
+src/multiproposal/utils/run_paths.py

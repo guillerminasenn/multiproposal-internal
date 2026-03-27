@@ -381,6 +381,66 @@ def compute_squared_jumping_distance(chain):
     
     return sjd
 
+
+def summarize_squared_jumping_distance(
+    chain,
+    percentiles=(0.5, 2.5, 50.0, 97.5, 99.5),
+    return_distribution=False,
+):
+    """
+    Summarize the squared jumping distance distribution for an MCMC chain.
+
+    Parameters:
+    -----------
+    chain : array-like
+        1D or 2D array of MCMC samples.
+    percentiles : tuple, optional
+        Percentiles (in [0, 100]) to compute on the squared jumping distances.
+    return_distribution : bool, optional
+        If True, include the full empirical distribution of squared jumping
+        distances in the output.
+
+    Returns:
+    --------
+    summary : dict
+        Dictionary with summary statistics and requested percentiles.
+    """
+    sjd = compute_squared_jumping_distance(chain)
+    sjd = np.asarray(sjd, dtype=float)
+
+    if sjd.size == 0:
+        summary = {
+            "count": 0,
+            "mean": None,
+            "median": None,
+            "min": None,
+            "max": None,
+            "percentiles": {},
+        }
+        if return_distribution:
+            summary["distribution"] = []
+        return summary
+
+    summary = {
+        "count": int(sjd.size),
+        "mean": float(np.mean(sjd)),
+        "median": float(np.median(sjd)),
+        "min": float(np.min(sjd)),
+        "max": float(np.max(sjd)),
+        "percentiles": {},
+    }
+
+    if percentiles:
+        pct_values = np.percentile(sjd, percentiles)
+        for pct, val in zip(percentiles, pct_values):
+            key = f"p{pct:g}"
+            summary["percentiles"][key] = float(val)
+
+    if return_distribution:
+        summary["distribution"] = sjd.tolist()
+
+    return summary
+
 def compute_mean_squared_jumping_distance(chain):
     """
     Compute the mean squared jumping distance (MSJD) for an MCMC chain.

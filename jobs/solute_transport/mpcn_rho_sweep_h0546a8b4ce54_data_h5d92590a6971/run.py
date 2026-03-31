@@ -583,8 +583,8 @@ def main():
     obs_config = "central_modes"
 
     # Sweep configuration
-    n_iters = 30000
-    P_list = [10, 20, 30, 40, 100, 200]
+    n_iters = 300000
+    P_list = [500]
     M_list = P_list
     rho_list = [round(val, 3) for val in np.arange(0, 1.01, 0.05)]
     seed_base = 202

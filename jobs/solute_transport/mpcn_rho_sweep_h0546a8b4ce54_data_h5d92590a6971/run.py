@@ -214,6 +214,24 @@ def load_mpcn_diagnostics(diag_path):
     return snapshot, mean_dist_samples, mean_sq_dist_samples
 
 
+def _write_progress(progress_path, payload):
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(progress_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+
+
+def _write_partial_chain(samples_path, chain, accept_rate, runtime_sec, n_iters_completed, n_iters_total):
+    samples_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        samples_path,
+        chain=chain,
+        accept_rate=float(accept_rate),
+        runtime_sec=float(runtime_sec),
+        n_iters_completed=int(n_iters_completed),
+        n_iters_total=int(n_iters_total),
+    )
+
+
 def run_mpcn_chain(
     problem,
     x0,
@@ -263,6 +281,120 @@ def run_mpcn_chain(
         diagnostics = None
     runtime_sec = time.perf_counter() - t0
     accept_rate = float(np.mean(accepted_index != 0))
+    return chain, runtime_sec, accept_rate, diagnostics
+
+
+def run_mpcn_chain_with_checkpoints(
+    problem,
+    x0,
+    n_iters,
+    rho,
+    n_props,
+    seed,
+    diag_indices=None,
+    parallel_backend="process",
+    n_jobs=1,
+    parallelize_props=False,
+    llh_chunk_size=None,
+    checkpoint_interval=10000,
+    progress_path=None,
+    partial_samples_path=None,
+    progress_payload_base=None,
+):
+    rng = np.random.default_rng(seed)
+    t0 = time.perf_counter()
+    diag_set = set(int(i) for i in diag_indices) if diag_indices is not None else None
+    chain_blocks = [x0[None, :]]
+    accepted_blocks = []
+    diagnostics = [] if diag_set is not None else None
+    iter_completed = 0
+    x = x0.copy()
+
+    while iter_completed < n_iters:
+        block_iters = min(checkpoint_interval, n_iters - iter_completed)
+        block_diag_indices = None
+        block_diags = None
+        if diag_set is not None:
+            block_diag_indices = [
+                i - iter_completed
+                for i in diag_set
+                if iter_completed <= i < iter_completed + block_iters
+            ]
+
+        if block_diag_indices:
+            chain_block, accepted_block, block_diags = mpcn_chain(
+                x,
+                problem,
+                rng,
+                block_iters,
+                rho=rho,
+                n_props=n_props,
+                return_indices=True,
+                return_diagnostics=True,
+                diag_indices=block_diag_indices,
+                n_jobs=n_jobs,
+                parallel_backend=parallel_backend,
+                parallelize_props=parallelize_props,
+                llh_chunk_size=llh_chunk_size,
+            )
+        else:
+            chain_block, accepted_block = mpcn_chain(
+                x,
+                problem,
+                rng,
+                block_iters,
+                rho=rho,
+                n_props=n_props,
+                return_indices=True,
+                n_jobs=n_jobs,
+                parallel_backend=parallel_backend,
+                parallelize_props=parallelize_props,
+                llh_chunk_size=llh_chunk_size,
+            )
+
+        if block_diags:
+            for diag in block_diags:
+                diag["iter"] = int(diag["iter"]) + iter_completed
+                diagnostics.append(diag)
+
+        chain_blocks.append(chain_block[1:])
+        accepted_blocks.append(accepted_block)
+        iter_completed += block_iters
+        x = chain_block[-1]
+
+        runtime_sec = time.perf_counter() - t0
+        if accepted_blocks:
+            accept_rate = float(np.mean(np.concatenate(accepted_blocks) != 0))
+        else:
+            accept_rate = 0.0
+
+        if partial_samples_path is not None:
+            _write_partial_chain(
+                partial_samples_path,
+                np.vstack(chain_blocks),
+                accept_rate,
+                runtime_sec,
+                iter_completed,
+                n_iters,
+            )
+
+        if progress_path is not None:
+            payload = dict(progress_payload_base or {})
+            payload.update(
+                {
+                    "n_iters": int(n_iters),
+                    "completed_iters": int(iter_completed),
+                    "percent_complete": float(iter_completed / n_iters),
+                    "runtime_sec": float(runtime_sec),
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+            )
+            _write_progress(progress_path, payload)
+
+    chain = np.vstack(chain_blocks)
+    accepted_index = np.concatenate(accepted_blocks) if accepted_blocks else np.array([], dtype=int)
+    runtime_sec = time.perf_counter() - t0
+    accept_rate = float(np.mean(accepted_index != 0)) if accepted_index.size else 0.0
     return chain, runtime_sec, accept_rate, diagnostics
 
 
@@ -427,6 +559,7 @@ def main():
     parser.add_argument("--refresh-metrics-only", action="store_true")
     parser.add_argument("--skip-pcn", action="store_true")
     parser.add_argument("--skip-mess", action="store_true")
+    parser.add_argument("--checkpoint-interval", type=int, default=10000)
     args = parser.parse_args()
 
     repo_root = _resolve_repo_root()
@@ -468,6 +601,7 @@ def main():
     max_lag = 1500
     n_diag_samples = 100
     burn_in = 5000
+    checkpoint_interval = max(0, int(args.checkpoint_interval))
 
     # Optional overrides to reuse an existing run directory exactly.
     data_id_override = "data_h5d92590a6971"
@@ -523,6 +657,7 @@ def main():
         "mpcn_parallel_backend": mpcn_parallel_backend,
         "mpcn_parallelize_props": mpcn_parallelize_props,
         "mpcn_llh_chunk_size": mpcn_llh_chunk_size,
+        "checkpoint_interval": checkpoint_interval,
     }
     sweep_config = {
         "P_list": P_list,
@@ -570,6 +705,7 @@ def main():
     print("mpcn_parallel_n_jobs:", mpcn_parallel_n_jobs)
     print("mpcn_parallelize_props:", mpcn_parallelize_props)
     print("mpcn_llh_chunk_size:", mpcn_llh_chunk_size)
+    print("checkpoint_interval:", checkpoint_interval)
     print("data_id:", data_id)
     print("run_id:", run_id)
     print("Run directory:", estimations_dir)
@@ -674,19 +810,49 @@ def main():
         replace = n_diag_samples > diag_pool.size
         diag_indices = rng_diag.choice(diag_pool, size=n_diag_samples, replace=replace)
 
-        chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain(
-            problem,
-            x0,
-            n_iters,
-            rho=rho,
-            n_props=P,
-            seed=seed,
-            diag_indices=diag_indices,
-            parallel_backend=mpcn_parallel_backend,
-            n_jobs=mpcn_parallel_n_jobs,
-            parallelize_props=mpcn_parallelize_props,
-            llh_chunk_size=llh_chunk_size,
-        )
+        progress_path = samples_path.with_suffix(".progress.json")
+        partial_samples_path = samples_path.with_name(f"{samples_path.stem}_partial.npz")
+        progress_payload_base = {
+            "dataset": "solute_transport",
+            "run_id": run_id,
+            "data_id": data_id,
+            "P": int(P),
+            "rho": float(rho),
+            "seed": int(seed),
+        }
+
+        if checkpoint_interval > 0:
+            chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain_with_checkpoints(
+                problem,
+                x0,
+                n_iters,
+                rho=rho,
+                n_props=P,
+                seed=seed,
+                diag_indices=diag_indices,
+                parallel_backend=mpcn_parallel_backend,
+                n_jobs=mpcn_parallel_n_jobs,
+                parallelize_props=mpcn_parallelize_props,
+                llh_chunk_size=llh_chunk_size,
+                checkpoint_interval=checkpoint_interval,
+                progress_path=progress_path,
+                partial_samples_path=partial_samples_path,
+                progress_payload_base=progress_payload_base,
+            )
+        else:
+            chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain(
+                problem,
+                x0,
+                n_iters,
+                rho=rho,
+                n_props=P,
+                seed=seed,
+                diag_indices=diag_indices,
+                parallel_backend=mpcn_parallel_backend,
+                n_jobs=mpcn_parallel_n_jobs,
+                parallelize_props=mpcn_parallelize_props,
+                llh_chunk_size=llh_chunk_size,
+            )
         metrics = summarize_chain_metrics(
             chain,
             runtime_sec,

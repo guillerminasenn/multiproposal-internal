@@ -26,6 +26,12 @@ Goal: outputs are stored under run-specific folders that uniquely identify datas
 - Keep inner mPCN parallelization enabled; avoid additional per-grid process pools to prevent
   over-subscription unless explicitly managed.
 
+Plain-language guidance:
+- Run several copies of the sweep script, each responsible for a different slice of (P, rho).
+- Each copy runs chains one-at-a-time (serial likelihood), but the copies run in parallel on
+  different CPU cores.
+- This is easier to manage and to stop than a single job that tries to use all cores internally.
+
 ## Directory structure
 Use a two-level identifier split:
 - data_id: hash of a stable, minimal dataset-generation config (data hyperparameters,
@@ -54,6 +60,13 @@ Required layout:
 - Prefer deterministic ordering of worker outputs (executor.map preserves input order) so results are stable across runs.
 - Use threads when the problem object is not picklable. Use processes only if the problem and inputs can be serialized.
 - Proposal-level parallelization (parallelize_props=True) changes the RNG stream relative to serial execution, because each proposal is generated from a worker-local SeedSequence. Treat this as an algorithmic variant when comparing mixing.
+
+## Checkpoints and progress
+- For long sweeps, write partial chains every fixed number of iterations (for example, every 10,000).
+- Store partial chains alongside the final chain with a _partial suffix.
+- Write a progress JSON file with completed_iters, total_iters, and timestamp so status can be read
+  without opening the chain file.
+- Keep checkpoints as execution metadata; do not include them in the run_id hash.
 
 ## Parallelization implementation pattern
 - Keep the vectorized path as the default and add an opt-in switch (for example, parallelize_props) to enable proposal-level parallelism.

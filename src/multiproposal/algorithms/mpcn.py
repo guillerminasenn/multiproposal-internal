@@ -9,6 +9,11 @@ import numpy as np
 
 
 def _resolve_n_jobs(n_jobs, n_props, core_frac):
+    """Resolve worker count for parallel log-likelihood evaluation.
+
+    If n_jobs is None or <= 0, use core_frac of detected CPU cores, capped by
+    n_props. Otherwise, clamp n_jobs to n_props.
+    """
     if n_jobs is None or n_jobs <= 0:
         cores = os.cpu_count() or 1
         max_workers = int(np.floor(core_frac * cores))
@@ -18,22 +23,36 @@ def _resolve_n_jobs(n_jobs, n_props, core_frac):
 
 
 def _evaluate_log_likelihoods(problem, props, executor=None):
+    """Evaluate log-likelihoods for proposals.
+
+    When executor is None, evaluates serially in-process. Otherwise, uses
+    executor.map with deterministic ordering.
+    """
     if executor is None:
         return np.array([problem.log_likelihood(p) for p in props])
     return np.array(list(executor.map(problem.log_likelihood, props)))
 
 
 def _evaluate_log_likelihoods_chunk(problem, props_chunk):
+    """Evaluate log-likelihoods for a chunk of proposals (serial)."""
     return np.array([problem.log_likelihood(p) for p in props_chunk])
 
 
 def _chunk_slices(n_items, chunk_size):
+    """Yield slices that partition n_items into chunk_size blocks."""
     for start in range(0, n_items, chunk_size):
         stop = min(n_items, start + chunk_size)
         yield slice(start, stop)
 
 
 def _evaluate_log_likelihoods_parallel(problem, props, executor, chunk_size):
+    """Evaluate log-likelihoods in parallel, optionally in chunks.
+
+    If chunk_size is None/<=0 or larger than the proposal count, this falls
+    back to executor.map over individual proposals. Otherwise, proposals are
+    grouped into chunks to amortize worker overhead. Ordering follows the
+    input order.
+    """
     if chunk_size is None or chunk_size <= 0 or chunk_size >= len(props):
         return np.array(list(executor.map(problem.log_likelihood, props)))
     chunks = [props[slc] for slc in _chunk_slices(len(props), chunk_size)]
@@ -44,12 +63,17 @@ def _evaluate_log_likelihoods_parallel(problem, props, executor, chunk_size):
 
 
 def _spawn_seeds(rng, n_seeds):
+    """Spawn n_seeds independent SeedSequence objects from a master RNG."""
     seed = int(rng.integers(0, 2**32, dtype=np.uint32))
     seed_seq = np.random.SeedSequence(seed)
     return seed_seq.spawn(n_seeds)
 
 
 def _propose_and_log_likelihood(seed_seq, problem, mu, x_center, rho, eta):
+    """Worker helper: draw one proposal and compute its log-likelihood.
+
+    This is used when parallelizing proposal generation (parallelize_props=True).
+    """
     rng_local = np.random.default_rng(seed_seq)
     z = rng_local.standard_normal(problem.dim)
     prop = mu + rho * (x_center - mu) + eta * problem.L @ z
@@ -67,9 +91,20 @@ def mpcn_step(
     executor=None,
     parallelize_props=False,
     collect_timing=False,
-    llh_chunk_size=None,
-):
-    """Run one mpCN step."""
+    llh_chunk_size=None):
+    """Run one mPCN step with optional parallelization.
+
+    Parallel modes:
+    - executor is None: fully serial (proposal generation and log-likelihoods).
+    - executor provided and parallelize_props=False: proposals are generated
+        in the main process (vectorized); log-likelihoods are evaluated via the
+        executor, optionally in chunks (llh_chunk_size).
+    - executor provided and parallelize_props=True: each proposal is generated
+        in a worker using an independent SeedSequence; each worker also computes
+        its log-likelihood. This changes the RNG stream relative to serial.
+
+    Thread vs process is chosen by the caller (mpcn_chain) via executor type.
+    """
     t_start = time.perf_counter() if collect_timing else None
     mu = problem.prior_mean()
     eta = np.sqrt(1.0 - rho * rho)
@@ -176,8 +211,22 @@ def mpcn_chain(
     parallelize_props=False,
     collect_timing=False,
     llh_chunk_size=None,
-):
-    """Run one mpCN chain for n_iters steps."""
+    ):
+    """Run one mPCN chain for n_iters steps.
+
+    Parallelization controls:
+    - n_jobs and core_frac resolve to an executor worker count; if <=1, the
+        chain runs fully serial.
+    - parallel_backend chooses ThreadPoolExecutor ('auto'/'thread') or
+        ProcessPoolExecutor ('process'). Use threads when the problem object
+        is not picklable.
+    - parallelize_props toggles proposal-level parallelism (see mpcn_step).
+    - llh_chunk_size controls chunking for log-likelihood evaluation when
+        proposals are generated in the main process.
+
+    Diagnostics capture can be restricted to diag_indices. When enabled, the
+    chain returns both the accepted indices and a list of diagnostic snapshots.
+    """
     chain = np.zeros((n_iters + 1, problem.dim), dtype=float)
     accepted_index = np.zeros(n_iters, dtype=int) if return_indices else None
     diagnostics = [] if return_diagnostics else None

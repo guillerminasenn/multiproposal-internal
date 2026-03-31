@@ -53,6 +53,7 @@ Required layout:
 - Record parallel settings in config.json under a separate execution section when helpful (for example, n_jobs, backend, per-proposal parallelization).
 - Prefer deterministic ordering of worker outputs (executor.map preserves input order) so results are stable across runs.
 - Use threads when the problem object is not picklable. Use processes only if the problem and inputs can be serialized.
+- Proposal-level parallelization (parallelize_props=True) changes the RNG stream relative to serial execution, because each proposal is generated from a worker-local SeedSequence. Treat this as an algorithmic variant when comparing mixing.
 
 ## Parallelization implementation pattern
 - Keep the vectorized path as the default and add an opt-in switch (for example, parallelize_props) to enable proposal-level parallelism.

@@ -1,0 +1,42 @@
+P_list: [10, 30, 50, 100]
+rho_list: [np.float64(0.0), np.float64(0.02), np.float64(0.05), np.float64(0.08), np.float64(0.1), np.float64(0.12), np.float64(0.15), np.float64(0.18), np.float64(0.2), np.float64(0.22), np.float64(0.25), np.float64(0.28), np.float64(0.3), np.float64(0.32), np.float64(0.35), np.float64(0.38), np.float64(0.4), np.float64(0.43), np.float64(0.45), np.float64(0.48), np.float64(0.5), np.float64(0.52), np.float64(0.55), np.float64(0.58), np.float64(0.6), np.float64(0.62), np.float64(0.65), np.float64(0.68), np.float64(0.7), np.float64(0.73), np.float64(0.75), np.float64(0.78), np.float64(0.8), np.float64(0.82), np.float64(0.85), np.float64(0.88), np.float64(0.9), np.float64(0.92), np.float64(0.95), np.float64(0.98), np.float64(1.0)]
+n_iters: 300000
+n_diag_samples: 100
+run_pcn: False
+run_mess: False
+checkpoint_interval: 10000
+data_id: data_hed26f0f7a3ae
+run_id: mpcn_rho_sweep_h5c884eebabc6
+Run directory: /home/senng/multiproposal-internal/estimations/multiwell/data_hed26f0f7a3ae/sweep/mpcn_rho_sweep_h5c884eebabc6
+pCN disabled (run_pcn=False).
+mPCN loaded: P=10, rho=0.100, accept=0.388, runtime=25.77s
+mPCN loaded: P=10, rho=0.300, accept=0.388, runtime=25.28s
+mPCN loaded: P=10, rho=0.500, accept=0.397, runtime=25.12s
+mPCN loaded: P=10, rho=0.700, accept=0.425, runtime=25.21s
+mPCN loaded: P=10, rho=0.900, accept=0.560, runtime=25.66s
+Estimating ESS for each parameter.
+mPCN done: P=30, rho=0.080, accept=0.671, runtime=51.90s
+Estimating ESS for each parameter.
+mPCN done: P=30, rho=0.280, accept=0.670, runtime=50.47s
+Estimating ESS for each parameter.
+mPCN done: P=30, rho=0.480, accept=0.674, runtime=49.51s
+Estimating ESS for each parameter.
+mPCN done: P=30, rho=0.680, accept=0.688, runtime=49.42s
+Estimating ESS for each parameter.
+mPCN done: P=30, rho=0.880, accept=0.762, runtime=49.31s
+mPCN loaded: P=50, rho=0.050, accept=0.781, runtime=71.71s
+mPCN loaded: P=50, rho=0.250, accept=0.779, runtime=69.54s
+mPCN loaded: P=50, rho=0.450, accept=0.781, runtime=71.78s
+mPCN loaded: P=50, rho=0.650, accept=0.788, runtime=69.55s
+mPCN loaded: P=50, rho=0.850, accept=0.822, runtime=71.53s
+Estimating ESS for each parameter.
+mPCN done: P=100, rho=0.020, accept=0.882, runtime=131.23s
+Estimating ESS for each parameter.
+mPCN done: P=100, rho=0.220, accept=0.882, runtime=131.48s
+Estimating ESS for each parameter.
+mPCN done: P=100, rho=0.430, accept=0.882, runtime=126.35s
+Estimating ESS for each parameter.
+mPCN done: P=100, rho=0.620, accept=0.884, runtime=126.26s
+Estimating ESS for each parameter.
+mPCN done: P=100, rho=0.820, accept=0.894, runtime=125.96s
+MESS disabled (run_mess=False).

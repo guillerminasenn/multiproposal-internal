@@ -171,9 +171,9 @@ def plot_ess_msjd_vs_rho(
             ess_vals = [
                 val / count if count else val for val, count in zip(ess_vals, counts)
             ]
-        ax_ess.plot(rho_list, ess_vals, marker="o", color=color_by_P[P], label=f"mpCN (P={P})")
+        ax_ess.plot(rho_list, ess_vals, marker="o", markersize=3, color=color_by_P[P], label=f"mpCN (P={P})")
     if show_pcn and pcn_ess is not None:
-        ax_ess.plot(rho_list, pcn_ess, color="black", marker="s", linestyle="--", label="pCN")
+        ax_ess.plot(rho_list, pcn_ess, color="black", marker="s", markersize=3, linestyle="--", label="pCN")
     if show_mess and run_mess:
         for P in P_sorted:
             mess_uniform = results["mess_uniform"][P]["metrics"]["ess_mean"]
@@ -195,9 +195,9 @@ def plot_ess_msjd_vs_rho(
 
     for P in P_sorted:
         msjd_vals = [results["mpcn"][P][rho]["metrics"]["msjd_mean"] for rho in rho_list]
-        ax_msjd.plot(rho_list, msjd_vals, marker="o", color=color_by_P[P], label=f"mpCN (P={P})")
+        ax_msjd.plot(rho_list, msjd_vals, marker="o", markersize=3, color=color_by_P[P], label=f"mpCN (P={P})")
     if show_pcn and pcn_msjd is not None:
-        ax_msjd.plot(rho_list, pcn_msjd, color="black", marker="s", linestyle="--", label="pCN")
+        ax_msjd.plot(rho_list, pcn_msjd, color="black", marker="s", markersize=3, linestyle="--", label="pCN")
     if show_mess and run_mess:
         for P in P_sorted:
             mess_uniform = results["mess_uniform"][P]["metrics"]["msjd_mean"]
@@ -268,10 +268,10 @@ def plot_ess_msjd_per_param_vs_rho(
             ]
             ess_x1 = [val / count if count else val for val, count in zip(ess_x1, counts)]
             ess_x2 = [val / count if count else val for val, count in zip(ess_x2, counts)]
-        axes[0, 0].plot(rho_list, ess_x1, marker="o", color=color_by_P[P], label=f"mpCN (P={P})")
-        axes[1, 0].plot(rho_list, ess_x2, marker="o", color=color_by_P[P])
-        axes[0, 1].plot(rho_list, msjd_x1, marker="o", color=color_by_P[P])
-        axes[1, 1].plot(rho_list, msjd_x2, marker="o", color=color_by_P[P])
+        axes[0, 0].plot(rho_list, ess_x1, marker="o", markersize=3, color=color_by_P[P], label=f"mpCN (P={P})")
+        axes[1, 0].plot(rho_list, ess_x2, marker="o", markersize=3, color=color_by_P[P])
+        axes[0, 1].plot(rho_list, msjd_x1, marker="o", markersize=3, color=color_by_P[P])
+        axes[1, 1].plot(rho_list, msjd_x2, marker="o", markersize=3, color=color_by_P[P])
 
     if show_pcn and run_pcn and results.get("pcn"):
         pcn_ess_x1 = [results["pcn"][rho]["metrics"]["ess_per_param"][0] for rho in rho_list]
@@ -284,16 +284,17 @@ def plot_ess_msjd_per_param_vs_rho(
             ]
             pcn_ess_x1 = [val / count if count else val for val, count in zip(pcn_ess_x1, counts)]
             pcn_ess_x2 = [val / count if count else val for val, count in zip(pcn_ess_x2, counts)]
-        axes[0, 0].plot(rho_list, pcn_ess_x1, color="black", marker="s", linestyle="--", label="pCN")
-        axes[1, 0].plot(rho_list, pcn_ess_x2, color="black", marker="s", linestyle="--")
-        axes[0, 1].plot(rho_list, pcn_msjd_x1, color="black", marker="s", linestyle="--")
-        axes[1, 1].plot(rho_list, pcn_msjd_x2, color="black", marker="s", linestyle="--")
+        axes[0, 0].plot(rho_list, pcn_ess_x1, color="black", marker="s", markersize=3, linestyle="--", label="pCN")
+        axes[1, 0].plot(rho_list, pcn_ess_x2, color="black", marker="s", markersize=3, linestyle="--")
+        axes[0, 1].plot(rho_list, pcn_msjd_x1, color="black", marker="s", markersize=3, linestyle="--")
+        axes[1, 1].plot(rho_list, pcn_msjd_x2, color="black", marker="s", markersize=3, linestyle="--")
         if pcn_scale:
             axes[0, 0].plot(
                 rho_list,
                 [x * pcn_scale for x in pcn_ess_x1],
                 color="red",
                 marker="s",
+                markersize=3,
                 linestyle="-",
                 label=f"pCN x {pcn_scale}",
             )
@@ -302,6 +303,7 @@ def plot_ess_msjd_per_param_vs_rho(
                 [x * pcn_scale for x in pcn_ess_x2],
                 color="red",
                 marker="s",
+                markersize=3,
                 linestyle="-",
                 label=f"pCN x {pcn_scale}",
             )

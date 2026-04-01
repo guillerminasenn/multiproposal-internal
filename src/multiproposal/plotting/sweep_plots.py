@@ -136,6 +136,8 @@ def plot_ess_msjd_vs_rho(
     title_prefix="Multiwell",
     normalize_ess=False,
     share_y_metrics=False,
+    show_independent=False,
+    independent_label_prefix="pCN indep",
 ):
     """Plot ESS/MSJD vs rho curves for each P."""
     apply_pub_style()
@@ -172,6 +174,20 @@ def plot_ess_msjd_vs_rho(
                 val / count if count else val for val, count in zip(ess_vals, counts)
             ]
         ax_ess.plot(rho_list, ess_vals, marker="o", markersize=3, color=color_by_P[P], label=f"mpCN (P={P})")
+        if show_independent and results.get("pcn_independent"):
+            indep_entries = results["pcn_independent"].get(P)
+            if indep_entries:
+                key = "ess_mean_sum_norm" if normalize_ess else "ess_mean_sum"
+                indep_vals = [indep_entries[rho]["metrics"].get(key, np.nan) for rho in rho_list]
+                ax_ess.plot(
+                    rho_list,
+                    indep_vals,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} (P={P})",
+                )
     if show_pcn and pcn_ess is not None:
         ax_ess.plot(rho_list, pcn_ess, color="black", marker="s", markersize=3, linestyle="--", label="pCN")
     if show_mess and run_mess:
@@ -196,6 +212,35 @@ def plot_ess_msjd_vs_rho(
     for P in P_sorted:
         msjd_vals = [results["mpcn"][P][rho]["metrics"]["msjd_mean"] for rho in rho_list]
         ax_msjd.plot(rho_list, msjd_vals, marker="o", markersize=3, color=color_by_P[P], label=f"mpCN (P={P})")
+        if show_independent and results.get("pcn_independent"):
+            indep_entries = results["pcn_independent"].get(P)
+            if indep_entries:
+                msjd_mean_vals = [
+                    indep_entries[rho]["metrics"].get("msjd_mean_mean", np.nan)
+                    for rho in rho_list
+                ]
+                msjd_max_vals = [
+                    indep_entries[rho]["metrics"].get("msjd_mean_max", np.nan)
+                    for rho in rho_list
+                ]
+                ax_msjd.plot(
+                    rho_list,
+                    msjd_mean_vals,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} mean (P={P})",
+                )
+                ax_msjd.plot(
+                    rho_list,
+                    msjd_max_vals,
+                    marker="s",
+                    markersize=3,
+                    linestyle="--",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} max (P={P})",
+                )
     if show_pcn and pcn_msjd is not None:
         ax_msjd.plot(rho_list, pcn_msjd, color="black", marker="s", markersize=3, linestyle="--", label="pCN")
     if show_mess and run_mess:
@@ -246,6 +291,8 @@ def plot_ess_msjd_per_param_vs_rho(
     pcn_scale=None,
     normalize_ess=False,
     share_y_metrics=False,
+    show_independent=False,
+    independent_label_prefix="pCN indep",
 ):
     """Plot ESS/MSJD per-parameter vs rho."""
     apply_pub_style()
@@ -272,6 +319,85 @@ def plot_ess_msjd_per_param_vs_rho(
         axes[1, 0].plot(rho_list, ess_x2, marker="o", markersize=3, color=color_by_P[P])
         axes[0, 1].plot(rho_list, msjd_x1, marker="o", markersize=3, color=color_by_P[P])
         axes[1, 1].plot(rho_list, msjd_x2, marker="o", markersize=3, color=color_by_P[P])
+        if show_independent and results.get("pcn_independent"):
+            indep_entries = results["pcn_independent"].get(P)
+            if indep_entries:
+                key = "ess_per_param_sum_norm" if normalize_ess else "ess_per_param_sum"
+                ess_x1_i = [
+                    indep_entries[rho]["metrics"].get(key, [np.nan, np.nan])[0]
+                    for rho in rho_list
+                ]
+                ess_x2_i = [
+                    indep_entries[rho]["metrics"].get(key, [np.nan, np.nan])[1]
+                    for rho in rho_list
+                ]
+                msjd_x1_mean = [
+                    indep_entries[rho]["metrics"].get("msjd_per_param_mean", [np.nan, np.nan])[0]
+                    for rho in rho_list
+                ]
+                msjd_x2_mean = [
+                    indep_entries[rho]["metrics"].get("msjd_per_param_mean", [np.nan, np.nan])[1]
+                    for rho in rho_list
+                ]
+                msjd_x1_max = [
+                    indep_entries[rho]["metrics"].get("msjd_per_param_max", [np.nan, np.nan])[0]
+                    for rho in rho_list
+                ]
+                msjd_x2_max = [
+                    indep_entries[rho]["metrics"].get("msjd_per_param_max", [np.nan, np.nan])[1]
+                    for rho in rho_list
+                ]
+                axes[0, 0].plot(
+                    rho_list,
+                    ess_x1_i,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} (P={P})",
+                )
+                axes[1, 0].plot(
+                    rho_list,
+                    ess_x2_i,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                )
+                axes[0, 1].plot(
+                    rho_list,
+                    msjd_x1_mean,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} mean (P={P})",
+                )
+                axes[1, 1].plot(
+                    rho_list,
+                    msjd_x2_mean,
+                    marker="s",
+                    markersize=3,
+                    linestyle=":",
+                    color=color_by_P[P],
+                )
+                axes[0, 1].plot(
+                    rho_list,
+                    msjd_x1_max,
+                    marker="s",
+                    markersize=3,
+                    linestyle="--",
+                    color=color_by_P[P],
+                    label=f"{independent_label_prefix} max (P={P})",
+                )
+                axes[1, 1].plot(
+                    rho_list,
+                    msjd_x2_max,
+                    marker="s",
+                    markersize=3,
+                    linestyle="--",
+                    color=color_by_P[P],
+                )
 
     if show_pcn and run_pcn and results.get("pcn"):
         pcn_ess_x1 = [results["pcn"][rho]["metrics"]["ess_per_param"][0] for rho in rho_list]

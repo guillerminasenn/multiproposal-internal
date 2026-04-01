@@ -147,6 +147,15 @@ def mpcn_diag_path(estimations_dir, P, rho, seed_base):
     return diag_dir / f"mpcn_P{P}_rho{rho_tag}_seed{seed_base}_diag.npz"
 
 
+def independent_pcn_paths(estimations_dir, P, rho, seed_base):
+    rho_tag = rho_to_tag(rho)
+    chains_dir = estimations_dir / "chains" / "independent_chains"
+    stem = f"pcn_independent_P{P}_rho{rho_tag}_seed{seed_base}"
+    samples_path = chains_dir / f"{stem}.npz"
+    metrics_path = chains_dir / f"{stem}_metrics.json"
+    return samples_path, metrics_path
+
+
 def save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec):
     payload = dict(metrics)
     payload["accept_rate"] = None if accept_rate is None else float(accept_rate)
@@ -404,6 +413,7 @@ def main():
     parser.add_argument("--refresh-metrics-only", action="store_true")
     parser.add_argument("--skip-pcn", action="store_true")
     parser.add_argument("--skip-mess", action="store_true")
+    parser.add_argument("--skip-independent-pcn", action="store_true")
     parser.add_argument("--checkpoint-interval", type=int, default=10000)
     args = parser.parse_args()
 
@@ -427,6 +437,7 @@ def main():
     seed_base = 202
     run_pcn = True
     run_mess = False
+    run_independent_pcn = True
 
     # Metrics config
     max_lag = 5000
@@ -446,9 +457,11 @@ def main():
 
     run_pcn = run_pcn and not args.skip_pcn
     run_mess = run_mess and not args.skip_mess
+    run_independent_pcn = run_independent_pcn and not args.skip_independent_pcn
     if args.grid_count > 1 and args.grid_index != 0:
         run_pcn = False
         run_mess = False
+        run_independent_pcn = False
 
     if args.grid_count < 1:
         raise ValueError("grid-count must be >= 1")
@@ -499,7 +512,13 @@ def main():
         "algorithm": "mpcn_rho_sweep",
         "data": data_config,
         "algorithm_config": algo_config,
-        "execution": {"checkpoint_interval": checkpoint_interval},
+        "execution": {
+            "checkpoint_interval": checkpoint_interval,
+            "independent_pcn": {
+                "enabled": run_independent_pcn,
+                "P": int(max(P_list)) if P_list else None,
+            },
+        },
         "sweep": sweep_config,
     }
     config_path = estimations_dir / "config.json"
@@ -516,6 +535,7 @@ def main():
     print("n_diag_samples:", n_diag_samples)
     print("run_pcn:", run_pcn)
     print("run_mess:", run_mess)
+    print("run_independent_pcn:", run_independent_pcn)
     print("checkpoint_interval:", checkpoint_interval)
     print("data_id:", data_id)
     print("run_id:", run_id)
@@ -543,6 +563,8 @@ def main():
     )
     rng_init = np.random.default_rng(seed_base)
     x0 = problem.sample_prior(rng_init)
+
+    independent_P = max(P_list)
 
     if run_pcn:
         for rho in rho_list:
@@ -577,6 +599,87 @@ def main():
             print(f"pCN done: rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s")
     else:
         print("pCN disabled (run_pcn=False).")
+
+    if run_independent_pcn:
+        for rho in rho_list:
+            samples_path, metrics_path = independent_pcn_paths(
+                estimations_dir, independent_P, rho=rho, seed_base=seed_base
+            )
+            if samples_path.exists():
+                metrics = load_metrics_json(metrics_path)
+                with np.load(samples_path, allow_pickle=False) as data:
+                    runtimes = data.get("runtimes_sec", np.asarray([]))
+                runtime_sec = float(np.sum(runtimes)) if runtimes.size else 0.0
+                if args.refresh_metrics_only and metrics is None:
+                    metrics = {
+                        "P": int(independent_P),
+                        "rho": float(rho),
+                        "seed_base": int(seed_base),
+                        "n_iters": int(n_iters),
+                    }
+                    save_metrics_json(metrics_path, metrics, None, runtime_sec)
+                print(
+                    f"pCN independent loaded: P={independent_P}, rho={rho:.3f}, "
+                    f"runtime={runtime_sec:.2f}s"
+                )
+                continue
+            if args.refresh_metrics_only:
+                print(
+                    f"pCN independent missing: P={independent_P}, rho={rho:.3f} "
+                    "(skipping, refresh_metrics_only=True)"
+                )
+                continue
+
+            chains = np.zeros((independent_P, n_iters + 1, problem.dim), dtype=float)
+            accept_rates = np.zeros(independent_P, dtype=float)
+            runtimes = np.zeros(independent_P, dtype=float)
+            seeds = []
+            rho_seed = int(round(rho * 1000))
+            for idx in range(independent_P):
+                seed = seed_base + rho_seed * 10000 + idx
+                rng_chain = np.random.default_rng(seed)
+                x0_chain = problem.sample_prior(rng_chain)
+                t0 = time.perf_counter()
+                chain, accept_rate = pcn_chain(
+                    x0_chain, problem, rng_chain, n_iters, rho=rho, return_acceptance=True
+                )
+                runtime_sec = time.perf_counter() - t0
+                chains[idx] = chain
+                accept_rates[idx] = accept_rate
+                runtimes[idx] = runtime_sec
+                seeds.append(seed)
+                print(
+                    f"pCN independent chain {idx + 1}/{independent_P} done: "
+                    f"rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
+                )
+
+            metrics = {
+                "P": int(independent_P),
+                "rho": float(rho),
+                "seed_base": int(seed_base),
+                "n_iters": int(n_iters),
+                "chain_seeds": [int(val) for val in seeds],
+            }
+            accept_rate = float(np.mean(accept_rates)) if accept_rates.size else np.nan
+            runtime_sec = float(np.sum(runtimes)) if runtimes.size else 0.0
+            samples_path.parent.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(
+                samples_path,
+                chains=chains,
+                accept_rates=accept_rates,
+                runtimes_sec=runtimes,
+                seeds=np.asarray(seeds, dtype=int),
+                n_iters=int(n_iters),
+                rho=float(rho),
+                P=int(independent_P),
+            )
+            save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
+            print(
+                f"pCN independent done: P={independent_P}, rho={rho:.3f}, "
+                f"total_runtime={runtime_sec:.2f}s"
+            )
+    else:
+        print("pCN independent disabled (run_independent_pcn=False).")
 
     grid = [(P, float(rho)) for P in P_list for rho in rho_list]
     grid = grid[args.grid_index:: args.grid_count]

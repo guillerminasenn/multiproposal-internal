@@ -598,7 +598,7 @@ def main():
     mpcn_llh_chunk_size = 0
 
     # Metrics config
-    max_lag = 1500
+    max_lag = 5000
     n_diag_samples = 100
     burn_in = 5000
     checkpoint_interval = max(0, int(args.checkpoint_interval))

@@ -435,7 +435,7 @@ def main():
     M_list = list(P_list)
     rho_list = [round(val, 3) for val in np.arange(0, 1.01, 0.025)]
     seed_base = 202
-    run_pcn = True
+    run_pcn = False
     run_mess = False
     run_independent_pcn = True
 

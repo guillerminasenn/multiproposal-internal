@@ -152,6 +152,36 @@ def mpcn_diag_path(estimations_dir, P, rho, seed_base):
     return diag_dir / f"mpcn_P{P}_rho{rho_tag}_seed{seed_base}_diag.npz"
 
 
+def independent_pcn_dir(estimations_dir):
+    return estimations_dir / "chains" / "independent_chains"
+
+
+def independent_pcn_index_path(estimations_dir, P, rho, seed_base):
+    rho_tag = rho_to_tag(rho)
+    chains_dir = independent_pcn_dir(estimations_dir)
+    return chains_dir / f"pcn_independent_P{P}_rho{rho_tag}_seed{seed_base}_index.json"
+
+
+def independent_pcn_chain_path(estimations_dir, P, rho, seed_base, chain_idx):
+    rho_tag = rho_to_tag(rho)
+    chains_dir = independent_pcn_dir(estimations_dir)
+    stem = f"pcn_independent_P{P}_rho{rho_tag}_seed{seed_base}_chain{chain_idx:04d}"
+    return chains_dir / f"{stem}.npz"
+
+
+def load_independent_index(index_path):
+    if not index_path.exists():
+        return None
+    with open(index_path, "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def save_independent_index(index_path, payload):
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(index_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+
+
 def save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec):
     payload = dict(metrics)
     payload["accept_rate"] = None if accept_rate is None else float(accept_rate)
@@ -559,6 +589,9 @@ def main():
     parser.add_argument("--refresh-metrics-only", action="store_true")
     parser.add_argument("--skip-pcn", action="store_true")
     parser.add_argument("--skip-mess", action="store_true")
+    parser.add_argument("--skip-mpcn", action="store_true")
+    parser.add_argument("--skip-independent-pcn", action="store_true")
+    parser.add_argument("--independent-pcn-count", type=int, default=None)
     parser.add_argument("--checkpoint-interval", type=int, default=10000)
     args = parser.parse_args()
 
@@ -590,6 +623,9 @@ def main():
     seed_base = 202
     run_pcn = True
     run_mess = False
+    run_mpcn = True
+    independent_pcn_count = 0
+    run_independent_pcn = False
 
     # Parallel execution (mPCN)
     mpcn_parallel_n_jobs = 12
@@ -615,6 +651,11 @@ def main():
 
     run_pcn = run_pcn and not args.skip_pcn
     run_mess = run_mess and not args.skip_mess
+    run_mpcn = run_mpcn and not args.skip_mpcn
+    if args.independent_pcn_count is not None:
+        independent_pcn_count = int(args.independent_pcn_count)
+    run_independent_pcn = independent_pcn_count > 0
+    run_independent_pcn = run_independent_pcn and not args.skip_independent_pcn
 
     if args.grid_count < 1:
         raise ValueError("grid-count must be >= 1")
@@ -658,6 +699,10 @@ def main():
         "mpcn_parallelize_props": mpcn_parallelize_props,
         "mpcn_llh_chunk_size": mpcn_llh_chunk_size,
         "checkpoint_interval": checkpoint_interval,
+        "independent_pcn": {
+            "enabled": run_independent_pcn,
+            "count": int(independent_pcn_count),
+        },
     }
     sweep_config = {
         "P_list": P_list,
@@ -701,6 +746,9 @@ def main():
     print("n_diag_samples:", n_diag_samples)
     print("run_pcn:", run_pcn)
     print("run_mess:", run_mess)
+    print("run_mpcn:", run_mpcn)
+    print("run_independent_pcn:", run_independent_pcn)
+    print("independent_pcn_count:", independent_pcn_count)
     print("mpcn_parallel_backend:", mpcn_parallel_backend)
     print("mpcn_parallel_n_jobs:", mpcn_parallel_n_jobs)
     print("mpcn_parallelize_props:", mpcn_parallelize_props)
@@ -762,142 +810,234 @@ def main():
     else:
         print("pCN disabled (run_pcn=False).")
 
-    grid = [(P, float(rho)) for P in P_list for rho in rho_list]
-    grid = grid[args.grid_index:: args.grid_count]
-
-    for P, rho in grid:
-        if mpcn_llh_chunk_size and mpcn_llh_chunk_size > 0:
-            llh_chunk_size = int(mpcn_llh_chunk_size)
-        else:
-            llh_chunk_size = max(1, int(np.ceil(P / max(1, mpcn_parallel_n_jobs))))
-        parallel_info = {
-            "backend": mpcn_parallel_backend,
-            "n_jobs": mpcn_parallel_n_jobs,
-            "parallelize_props": mpcn_parallelize_props,
-            "llh_chunk_size": llh_chunk_size,
-        }
-
-        samples_path, metrics_path = chain_cache_paths(
-            estimations_dir, "mpcn", rho=rho, seed_base=seed_base, P=P
-        )
-        diag_path = mpcn_diag_path(estimations_dir, P, rho, seed_base)
-        loaded = load_chain_bundle(samples_path, metrics_path)
-        if loaded is not None:
-            chain, accept_rate, runtime_sec, metrics = loaded
-            if args.refresh_metrics_only or metrics is None or "ess_per_param" not in metrics:
-                metrics = summarize_chain_metrics(
-                    chain,
-                    runtime_sec,
-                    burn_in=burn_in,
-                    max_lag=max_lag,
-                    parallel_info=parallel_info,
+    if run_independent_pcn:
+        independent_P = int(independent_pcn_count)
+        if independent_P < 1:
+            raise ValueError("independent-pcn-count must be >= 1")
+        rho_grid = rho_list[args.grid_index:: args.grid_count]
+        for rho in rho_grid:
+            index_path = independent_pcn_index_path(
+                estimations_dir, independent_P, rho=rho, seed_base=seed_base
+            )
+            index_payload = load_independent_index(index_path)
+            if index_payload is None:
+                index_payload = {
+                    "metadata": {
+                        "P": int(independent_P),
+                        "rho": float(rho),
+                        "seed_base": int(seed_base),
+                        "n_iters": int(n_iters),
+                        "dim": int(problem.dim),
+                    },
+                    "chains": [],
+                }
+            chains = index_payload.get("chains", [])
+            index_payload["chains"] = chains
+            completed = len(chains)
+            if completed >= independent_P:
+                print(
+                    f"pCN independent loaded: rho={rho:.3f}, "
+                    f"P={independent_P}, completed={completed}"
                 )
-                save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
-            accept_display = np.nan if accept_rate is None else accept_rate
-            print(
-                f"mPCN loaded: P={P}, rho={rho:.3f}, accept={accept_display:.3f}, runtime={runtime_sec:.2f}s"
-            )
-            continue
-        if args.refresh_metrics_only:
-            print(
-                f"mPCN missing chain: P={P}, rho={rho:.3f} (skipping, refresh_metrics_only=True)"
-            )
-            continue
+                continue
 
-        seed = seed_base + int(P * 1000 + round(rho * 100))
-        rng_diag = np.random.default_rng(seed)
-        diag_pool = np.arange(burn_in, n_iters)
-        replace = n_diag_samples > diag_pool.size
-        diag_indices = rng_diag.choice(diag_pool, size=n_diag_samples, replace=replace)
+            rho_seed = int(round(rho * 1000))
+            for idx in range(completed, independent_P):
+                seed = seed_base + rho_seed * 10000 + idx
+                chain_path = independent_pcn_chain_path(
+                    estimations_dir, independent_P, rho=rho, seed_base=seed_base, chain_idx=idx
+                )
+                if chain_path.exists():
+                    chains.append(
+                        {
+                            "chain_idx": int(idx),
+                            "file": chain_path.name,
+                            "seed": int(seed),
+                            "accept_rate": None,
+                            "runtime_sec": None,
+                        }
+                    )
+                    save_independent_index(index_path, index_payload)
+                    continue
 
-        progress_path = samples_path.with_suffix(".progress.json")
-        partial_samples_path = samples_path.with_name(f"{samples_path.stem}_partial.npz")
-        progress_payload_base = {
-            "dataset": "solute_transport",
-            "run_id": run_id,
-            "data_id": data_id,
-            "P": int(P),
-            "rho": float(rho),
-            "seed": int(seed),
-        }
-
-        if checkpoint_interval > 0:
-            chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain_with_checkpoints(
-                problem,
-                x0,
-                n_iters,
-                rho=rho,
-                n_props=P,
-                seed=seed,
-                diag_indices=diag_indices,
-                parallel_backend=mpcn_parallel_backend,
-                n_jobs=mpcn_parallel_n_jobs,
-                parallelize_props=mpcn_parallelize_props,
-                llh_chunk_size=llh_chunk_size,
-                checkpoint_interval=checkpoint_interval,
-                progress_path=progress_path,
-                partial_samples_path=partial_samples_path,
-                progress_payload_base=progress_payload_base,
-            )
-        else:
-            chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain(
-                problem,
-                x0,
-                n_iters,
-                rho=rho,
-                n_props=P,
-                seed=seed,
-                diag_indices=diag_indices,
-                parallel_backend=mpcn_parallel_backend,
-                n_jobs=mpcn_parallel_n_jobs,
-                parallelize_props=mpcn_parallelize_props,
-                llh_chunk_size=llh_chunk_size,
-            )
-        metrics = summarize_chain_metrics(
-            chain,
-            runtime_sec,
-            burn_in=burn_in,
-            max_lag=max_lag,
-            parallel_info=parallel_info,
-        )
-
-        mean_dist_samples = []
-        mean_sq_dist_samples = []
-        snapshot = None
-        if diagnostics:
-            for diag in diagnostics:
-                x_diag = diag["x"]
-                log_l0 = problem.log_likelihood(x_diag)
-                logy = log_l0
-                x_center = diag["x_center"]
-                nu_c = diag["nu_c"]
-                props = diag["props"]
-                candidates = diag["candidates"]
-                diff = props - x_center[None, :]
-                mean_dist = float(np.mean(np.linalg.norm(diff, axis=1)))
-                mean_sq_dist = float(np.mean(np.sum(diff * diff, axis=1)))
-                mean_dist_samples.append(mean_dist)
-                mean_sq_dist_samples.append(mean_sq_dist)
-                if snapshot is None:
-                    snapshot = {
-                        "iter": int(diag["iter"]),
-                        "x": x_diag.copy(),
-                        "x_center": x_center.copy(),
-                        "nu_c": nu_c.copy(),
-                        "props": props.copy(),
-                        "candidates": candidates.copy(),
-                        "logy": logy,
-                        "accepted_idx": int(diag["accepted_idx"]),
-                        "mean_dist": mean_dist,
-                        "mean_sq_dist": mean_sq_dist,
+                rng_chain = np.random.default_rng(seed)
+                x0_chain = problem.sample_prior(rng_chain)
+                t0 = time.perf_counter()
+                chain, accept_rate = pcn_chain(
+                    x0_chain, problem, rng_chain, n_iters, rho=rho, return_acceptance=True
+                )
+                runtime_sec = time.perf_counter() - t0
+                chain_path.parent.mkdir(parents=True, exist_ok=True)
+                np.savez_compressed(
+                    chain_path,
+                    chain=chain,
+                    accept_rate=float(accept_rate),
+                    runtime_sec=float(runtime_sec),
+                    seed=int(seed),
+                    rho=float(rho),
+                    n_iters=int(n_iters),
+                    chain_idx=int(idx),
+                )
+                chains.append(
+                    {
+                        "chain_idx": int(idx),
+                        "file": chain_path.name,
+                        "seed": int(seed),
+                        "accept_rate": float(accept_rate),
+                        "runtime_sec": float(runtime_sec),
                     }
+                )
+                save_independent_index(index_path, index_payload)
+                print(
+                    f"pCN independent chain {idx + 1}/{independent_P} done: "
+                    f"rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
+                )
+            print(
+                f"pCN independent done: rho={rho:.3f}, P={independent_P}, "
+                f"completed={len(chains)}"
+            )
+    else:
+        print("pCN independent disabled (run_independent_pcn=False).")
 
-        save_chain_bundle(samples_path, metrics_path, chain, accept_rate, runtime_sec, metrics)
-        save_mpcn_diagnostics(diag_path, snapshot, mean_dist_samples, mean_sq_dist_samples)
+    if run_mpcn:
+        grid = [(P, float(rho)) for P in P_list for rho in rho_list]
+        grid = grid[args.grid_index:: args.grid_count]
 
-        print(
-            f"mPCN done: P={P}, rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
-        )
+        for P, rho in grid:
+            if mpcn_llh_chunk_size and mpcn_llh_chunk_size > 0:
+                llh_chunk_size = int(mpcn_llh_chunk_size)
+            else:
+                llh_chunk_size = max(1, int(np.ceil(P / max(1, mpcn_parallel_n_jobs))))
+            parallel_info = {
+                "backend": mpcn_parallel_backend,
+                "n_jobs": mpcn_parallel_n_jobs,
+                "parallelize_props": mpcn_parallelize_props,
+                "llh_chunk_size": llh_chunk_size,
+            }
+
+            samples_path, metrics_path = chain_cache_paths(
+                estimations_dir, "mpcn", rho=rho, seed_base=seed_base, P=P
+            )
+            diag_path = mpcn_diag_path(estimations_dir, P, rho, seed_base)
+            loaded = load_chain_bundle(samples_path, metrics_path)
+            if loaded is not None:
+                chain, accept_rate, runtime_sec, metrics = loaded
+                if args.refresh_metrics_only or metrics is None or "ess_per_param" not in metrics:
+                    metrics = summarize_chain_metrics(
+                        chain,
+                        runtime_sec,
+                        burn_in=burn_in,
+                        max_lag=max_lag,
+                        parallel_info=parallel_info,
+                    )
+                    save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
+                accept_display = np.nan if accept_rate is None else accept_rate
+                print(
+                    f"mPCN loaded: P={P}, rho={rho:.3f}, accept={accept_display:.3f}, runtime={runtime_sec:.2f}s"
+                )
+                continue
+            if args.refresh_metrics_only:
+                print(
+                    f"mPCN missing chain: P={P}, rho={rho:.3f} (skipping, refresh_metrics_only=True)"
+                )
+                continue
+
+            seed = seed_base + int(P * 1000 + round(rho * 100))
+            rng_diag = np.random.default_rng(seed)
+            diag_pool = np.arange(burn_in, n_iters)
+            replace = n_diag_samples > diag_pool.size
+            diag_indices = rng_diag.choice(diag_pool, size=n_diag_samples, replace=replace)
+
+            progress_path = samples_path.with_suffix(".progress.json")
+            partial_samples_path = samples_path.with_name(f"{samples_path.stem}_partial.npz")
+            progress_payload_base = {
+                "dataset": "solute_transport",
+                "run_id": run_id,
+                "data_id": data_id,
+                "P": int(P),
+                "rho": float(rho),
+                "seed": int(seed),
+            }
+
+            if checkpoint_interval > 0:
+                chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain_with_checkpoints(
+                    problem,
+                    x0,
+                    n_iters,
+                    rho=rho,
+                    n_props=P,
+                    seed=seed,
+                    diag_indices=diag_indices,
+                    parallel_backend=mpcn_parallel_backend,
+                    n_jobs=mpcn_parallel_n_jobs,
+                    parallelize_props=mpcn_parallelize_props,
+                    llh_chunk_size=llh_chunk_size,
+                    checkpoint_interval=checkpoint_interval,
+                    progress_path=progress_path,
+                    partial_samples_path=partial_samples_path,
+                    progress_payload_base=progress_payload_base,
+                )
+            else:
+                chain, runtime_sec, accept_rate, diagnostics = run_mpcn_chain(
+                    problem,
+                    x0,
+                    n_iters,
+                    rho=rho,
+                    n_props=P,
+                    seed=seed,
+                    diag_indices=diag_indices,
+                    parallel_backend=mpcn_parallel_backend,
+                    n_jobs=mpcn_parallel_n_jobs,
+                    parallelize_props=mpcn_parallelize_props,
+                    llh_chunk_size=llh_chunk_size,
+                )
+            metrics = summarize_chain_metrics(
+                chain,
+                runtime_sec,
+                burn_in=burn_in,
+                max_lag=max_lag,
+                parallel_info=parallel_info,
+            )
+
+            mean_dist_samples = []
+            mean_sq_dist_samples = []
+            snapshot = None
+            if diagnostics:
+                for diag in diagnostics:
+                    x_diag = diag["x"]
+                    log_l0 = problem.log_likelihood(x_diag)
+                    logy = log_l0
+                    x_center = diag["x_center"]
+                    nu_c = diag["nu_c"]
+                    props = diag["props"]
+                    candidates = diag["candidates"]
+                    diff = props - x_center[None, :]
+                    mean_dist = float(np.mean(np.linalg.norm(diff, axis=1)))
+                    mean_sq_dist = float(np.mean(np.sum(diff * diff, axis=1)))
+                    mean_dist_samples.append(mean_dist)
+                    mean_sq_dist_samples.append(mean_sq_dist)
+                    if snapshot is None:
+                        snapshot = {
+                            "iter": int(diag["iter"]),
+                            "x": x_diag.copy(),
+                            "x_center": x_center.copy(),
+                            "nu_c": nu_c.copy(),
+                            "props": props.copy(),
+                            "candidates": candidates.copy(),
+                            "logy": logy,
+                            "accepted_idx": int(diag["accepted_idx"]),
+                            "mean_dist": mean_dist,
+                            "mean_sq_dist": mean_sq_dist,
+                        }
+
+            save_chain_bundle(samples_path, metrics_path, chain, accept_rate, runtime_sec, metrics)
+            save_mpcn_diagnostics(diag_path, snapshot, mean_dist_samples, mean_sq_dist_samples)
+
+            print(
+                f"mPCN done: P={P}, rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
+            )
+    else:
+        print("mPCN disabled (run_mpcn=False).")
 
     if run_mess:
         for P in P_list:

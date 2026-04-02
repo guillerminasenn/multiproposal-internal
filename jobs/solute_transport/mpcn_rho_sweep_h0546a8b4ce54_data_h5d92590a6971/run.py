@@ -584,7 +584,7 @@ def main():
 
     # Sweep configuration
     n_iters = 300000
-    P_list = [1000]
+    P_list = [2000]
     M_list = P_list
     rho_list = [round(val, 3) for val in np.arange(0, 1.01, 0.05)]
     seed_base = 202

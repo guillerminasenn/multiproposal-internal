@@ -1,4 +1,4 @@
-P_list: [1000]
+P_list: [2000]
 rho_list: [np.float64(0.0), np.float64(0.05), np.float64(0.1), np.float64(0.15), np.float64(0.2), np.float64(0.25), np.float64(0.3), np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65), np.float64(0.7), np.float64(0.75), np.float64(0.8), np.float64(0.85), np.float64(0.9), np.float64(0.95), np.float64(1.0)]
 n_iters: 300000
 n_diag_samples: 100
@@ -33,6 +33,3 @@ pCN loaded: rho=0.850, accept=0.005, runtime=1.63s
 pCN loaded: rho=0.900, accept=0.010, runtime=1.67s
 pCN loaded: rho=0.950, accept=0.021, runtime=1.65s
 pCN loaded: rho=1.000, accept=1.000, runtime=1.66s
-Estimating ESS for each parameter.
-mPCN done: P=1000, rho=0.150, accept=0.118, runtime=59541.30s
-mPCN loaded: P=1000, rho=0.550, accept=0.194, runtime=58486.48s

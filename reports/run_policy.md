@@ -8,6 +8,7 @@ Goal: outputs are stored under run-specific folders that uniquely identify datas
   - data generation parameters (noise, priors, seeds, etc.)
   - algorithm configuration (method, P, rho grid, M, n_iters, burn_in, etc.)
   - sweep configuration (if applicable)
+- All new functions should include a minimal, sufficient docstring that explains purpose and key inputs.
 - Never write outputs under the notebooks folder. All outputs must live under the repo root
   in estimations/ and reports/ (or a user-specified root via MULTIPROPOSAL_RUN_ROOT).
 - Store samples, metrics, diagnostics, and derived tables under the run-specific estimations directory.

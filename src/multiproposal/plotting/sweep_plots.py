@@ -31,10 +31,21 @@ def _unique_legend(fig, axes, loc="center left", bbox_to_anchor=(1.02, 0.5), nco
 
 
 def _post_sample_count(entry, burn_in):
+    if entry is None:
+        return None
     chain = entry.get("chain")
     if chain is None:
         return None
     return max(int(chain.shape[0]) - int(burn_in), 1)
+
+
+def _get_entry(results_dict, P, rho):
+    if results_dict is None:
+        return None
+    rho_key = float(rho)
+    if P is None:
+        return results_dict.get(rho_key)
+    return results_dict.get(P, {}).get(rho_key)
 
 
 def _normalize_ess(values, count):
@@ -150,11 +161,22 @@ def plot_ess_msjd_vs_rho(
     pcn_ess = None
     pcn_msjd = None
     if run_pcn and results.get("pcn"):
-        pcn_ess = [results["pcn"][rho]["metrics"]["ess_mean"] for rho in rho_list]
-        pcn_msjd = [results["pcn"][rho]["metrics"]["msjd_mean"] for rho in rho_list]
+        pcn_ess = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("ess_mean", np.nan)
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
+        pcn_msjd = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("msjd_mean", np.nan)
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         if normalize_ess:
             pcn_counts = [
-                _post_sample_count(results["pcn"][rho], burn_in) for rho in rho_list
+                _post_sample_count(_get_entry(results.get("pcn"), None, rho), burn_in)
+                for rho in rho_list
             ]
             pcn_ess = [
                 val / count if count else val for val, count in zip(pcn_ess, pcn_counts)
@@ -168,10 +190,16 @@ def plot_ess_msjd_vs_rho(
     ax_ess_max, ax_msjd_max = axes_max
 
     for P in P_sorted:
-        ess_vals = [results["mpcn"][P][rho]["metrics"]["ess_mean"] for rho in rho_list]
+        ess_vals = [
+            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("ess_mean", np.nan)
+            if _get_entry(results.get("mpcn"), P, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         if normalize_ess:
             counts = [
-                _post_sample_count(results["mpcn"][P][rho], burn_in) for rho in rho_list
+                _post_sample_count(_get_entry(results.get("mpcn"), P, rho), burn_in)
+                for rho in rho_list
             ]
             ess_vals = [
                 val / count if count else val for val, count in zip(ess_vals, counts)
@@ -196,23 +224,29 @@ def plot_ess_msjd_vs_rho(
             indep_entries = results["pcn_independent"].get(P)
             if indep_entries:
                 if normalize_ess:
-                    key = "ess_mean_sum_norm_iter"
+                    key = "ess_mean_sum_norm"
                 else:
                     key = "ess_mean_sum"
-                indep_vals = [indep_entries[rho]["metrics"].get(key, np.nan) for rho in rho_list]
+                indep_vals = [
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get(key, np.nan)
+                    for rho in rho_list
+                ]
                 if normalize_ess and np.all(np.isnan(indep_vals)):
-                    indep_vals = [indep_entries[rho]["metrics"].get("ess_mean_sum_norm", np.nan) for rho in rho_list]
+                    indep_vals = [
+                        indep_entries.get(float(rho), {}).get("metrics", {}).get("ess_mean_sum_norm_iter", np.nan)
+                        for rho in rho_list
+                    ]
                 ax_ess_mean.plot(
                     rho_list,
                     indep_vals,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} (P={P})",
                 )
                 ax_ess_max.plot(
                     rho_list,
                     indep_vals,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} (P={P})",
                 )
@@ -246,7 +280,12 @@ def plot_ess_msjd_vs_rho(
     ax_ess_max.grid(alpha=0.25)
 
     for P in P_sorted:
-        msjd_vals = [results["mpcn"][P][rho]["metrics"]["msjd_mean"] for rho in rho_list]
+        msjd_vals = [
+            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
+            if _get_entry(results.get("mpcn"), P, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         ax_msjd_mean.plot(
             rho_list,
             msjd_vals,
@@ -259,13 +298,13 @@ def plot_ess_msjd_vs_rho(
             indep_entries = results["pcn_independent"].get(P)
             if indep_entries:
                 msjd_mean_vals = [
-                    indep_entries[rho]["metrics"].get("msjd_mean_mean", np.nan)
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_mean_mean", np.nan)
                     for rho in rho_list
                 ]
                 ax_msjd_mean.plot(
                     rho_list,
                     msjd_mean_vals,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} mean (P={P})",
                 )
@@ -339,7 +378,12 @@ def plot_ess_msjd_vs_rho(
     plt.show()
 
     for P in P_sorted:
-        msjd_max_vals = [results["mpcn"][P][rho]["metrics"]["msjd_mean"] for rho in rho_list]
+        msjd_max_vals = [
+            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
+            if _get_entry(results.get("mpcn"), P, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         ax_msjd_max.plot(
             rho_list,
             msjd_max_vals,
@@ -352,7 +396,7 @@ def plot_ess_msjd_vs_rho(
             indep_entries = results["pcn_independent"].get(P)
             if indep_entries:
                 msjd_max_vals = [
-                    indep_entries[rho]["metrics"].get("msjd_mean_max", np.nan)
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_mean_max", np.nan)
                     for rho in rho_list
                 ]
                 ax_msjd_max.plot(
@@ -420,7 +464,7 @@ def plot_ess_msjd_vs_rho(
     plt.show()
 
 def _get_param_metric(results_dict, P, rho, metric_key, param_index):
-    entry = results_dict.get(P, {}).get(float(rho))
+    entry = _get_entry(results_dict, P, rho)
     if entry is None:
         return np.nan
     values = entry["metrics"].get(metric_key)
@@ -463,13 +507,14 @@ def plot_ess_msjd_per_param_vs_rho(
     ax_ess_x1_x, ax_msjd_max_x1 = axes_max[0]
     ax_ess_x2_x, ax_msjd_max_x2 = axes_max[1]
     for P in P_sorted:
-        ess_x1 = [_get_param_metric(results["mpcn"], P, rho, "ess_per_param", 0) for rho in rho_list]
-        ess_x2 = [_get_param_metric(results["mpcn"], P, rho, "ess_per_param", 1) for rho in rho_list]
-        msjd_x1 = [_get_param_metric(results["mpcn"], P, rho, "msjd_per_param", 0) for rho in rho_list]
-        msjd_x2 = [_get_param_metric(results["mpcn"], P, rho, "msjd_per_param", 1) for rho in rho_list]
+        ess_x1 = [_get_param_metric(results.get("mpcn", {}), P, rho, "ess_per_param", 0) for rho in rho_list]
+        ess_x2 = [_get_param_metric(results.get("mpcn", {}), P, rho, "ess_per_param", 1) for rho in rho_list]
+        msjd_x1 = [_get_param_metric(results.get("mpcn", {}), P, rho, "msjd_per_param", 0) for rho in rho_list]
+        msjd_x2 = [_get_param_metric(results.get("mpcn", {}), P, rho, "msjd_per_param", 1) for rho in rho_list]
         if normalize_ess:
             counts = [
-                _post_sample_count(results["mpcn"][P][rho], burn_in) for rho in rho_list
+                _post_sample_count(_get_entry(results.get("mpcn"), P, rho), burn_in)
+                for rho in rho_list
             ]
             ess_x1 = [val / count if count else val for val, count in zip(ess_x1, counts)]
             ess_x2 = [val / count if count else val for val, count in zip(ess_x2, counts)]
@@ -485,80 +530,80 @@ def plot_ess_msjd_per_param_vs_rho(
             indep_entries = results["pcn_independent"].get(P)
             if indep_entries:
                 if normalize_ess:
-                    key = "ess_per_param_sum_norm_iter"
+                    key = "ess_per_param_sum_norm"
                 else:
                     key = "ess_per_param_sum"
                 ess_x1_i = [
-                    indep_entries[rho]["metrics"].get(key, [np.nan, np.nan])[0]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get(key, [np.nan, np.nan])[0]
                     for rho in rho_list
                 ]
                 ess_x2_i = [
-                    indep_entries[rho]["metrics"].get(key, [np.nan, np.nan])[1]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get(key, [np.nan, np.nan])[1]
                     for rho in rho_list
                 ]
                 if normalize_ess and np.all(np.isnan(ess_x1_i)):
-                    fallback_key = "ess_per_param_sum_norm"
+                    fallback_key = "ess_per_param_sum_norm_iter"
                     ess_x1_i = [
-                        indep_entries[rho]["metrics"].get(fallback_key, [np.nan, np.nan])[0]
+                        indep_entries.get(float(rho), {}).get("metrics", {}).get(fallback_key, [np.nan, np.nan])[0]
                         for rho in rho_list
                     ]
                     ess_x2_i = [
-                        indep_entries[rho]["metrics"].get(fallback_key, [np.nan, np.nan])[1]
+                        indep_entries.get(float(rho), {}).get("metrics", {}).get(fallback_key, [np.nan, np.nan])[1]
                         for rho in rho_list
                     ]
                 msjd_x1_mean = [
-                    indep_entries[rho]["metrics"].get("msjd_per_param_mean", [np.nan, np.nan])[0]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_per_param_mean", [np.nan, np.nan])[0]
                     for rho in rho_list
                 ]
                 msjd_x2_mean = [
-                    indep_entries[rho]["metrics"].get("msjd_per_param_mean", [np.nan, np.nan])[1]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_per_param_mean", [np.nan, np.nan])[1]
                     for rho in rho_list
                 ]
                 msjd_x1_max = [
-                    indep_entries[rho]["metrics"].get("msjd_per_param_max", [np.nan, np.nan])[0]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_per_param_max", [np.nan, np.nan])[0]
                     for rho in rho_list
                 ]
                 msjd_x2_max = [
-                    indep_entries[rho]["metrics"].get("msjd_per_param_max", [np.nan, np.nan])[1]
+                    indep_entries.get(float(rho), {}).get("metrics", {}).get("msjd_per_param_max", [np.nan, np.nan])[1]
                     for rho in rho_list
                 ]
                 ax_ess_x1_m.plot(
                     rho_list,
                     ess_x1_i,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} (P={P})",
                 )
                 ax_ess_x2_m.plot(
                     rho_list,
                     ess_x2_i,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                 )
                 ax_ess_x1_x.plot(
                     rho_list,
                     ess_x1_i,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} (P={P})",
                 )
                 ax_ess_x2_x.plot(
                     rho_list,
                     ess_x2_i,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                 )
                 ax_msjd_mean_x1.plot(
                     rho_list,
                     msjd_x1_mean,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                     label=f"{independent_label_prefix} mean (P={P})",
                 )
                 ax_msjd_mean_x2.plot(
                     rho_list,
                     msjd_x2_mean,
-                    linestyle="--",
+                    linestyle=":",
                     color=color_by_P[P],
                 )
                 ax_msjd_max_x1.plot(
@@ -576,13 +621,34 @@ def plot_ess_msjd_per_param_vs_rho(
                 )
 
     if show_pcn and run_pcn and results.get("pcn"):
-        pcn_ess_x1 = [results["pcn"][rho]["metrics"]["ess_per_param"][0] for rho in rho_list]
-        pcn_ess_x2 = [results["pcn"][rho]["metrics"]["ess_per_param"][1] for rho in rho_list]
-        pcn_msjd_x1 = [results["pcn"][rho]["metrics"]["msjd_per_param"][0] for rho in rho_list]
-        pcn_msjd_x2 = [results["pcn"][rho]["metrics"]["msjd_per_param"][1] for rho in rho_list]
+        pcn_ess_x1 = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("ess_per_param", [np.nan, np.nan])[0]
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
+        pcn_ess_x2 = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("ess_per_param", [np.nan, np.nan])[1]
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
+        pcn_msjd_x1 = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("msjd_per_param", [np.nan, np.nan])[0]
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
+        pcn_msjd_x2 = [
+            _get_entry(results.get("pcn"), None, rho).get("metrics", {}).get("msjd_per_param", [np.nan, np.nan])[1]
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         if normalize_ess:
             counts = [
-                _post_sample_count(results["pcn"][rho], burn_in) for rho in rho_list
+                _post_sample_count(_get_entry(results.get("pcn"), None, rho), burn_in)
+                for rho in rho_list
             ]
             pcn_ess_x1 = [val / count if count else val for val, count in zip(pcn_ess_x1, counts)]
             pcn_ess_x2 = [val / count if count else val for val, count in zip(pcn_ess_x2, counts)]
@@ -732,14 +798,24 @@ def plot_rejection_vs_rho(
 
     pcn_reject = None
     if run_pcn and results.get("pcn"):
-        pcn_reject = [1.0 - results["pcn"][rho]["accept_rate"] for rho in rho_list]
+        pcn_reject = [
+            1.0 - _get_entry(results.get("pcn"), None, rho).get("accept_rate", np.nan)
+            if _get_entry(results.get("pcn"), None, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
 
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(1, 1, figsize=(7.2, 4.2), sharex=True)
 
     for P in P_sorted:
-        reject_vals = [1.0 - results["mpcn"][P][rho]["accept_rate"] for rho in rho_list]
+        reject_vals = [
+            1.0 - _get_entry(results.get("mpcn"), P, rho).get("accept_rate", np.nan)
+            if _get_entry(results.get("mpcn"), P, rho) is not None
+            else np.nan
+            for rho in rho_list
+        ]
         ax.plot(rho_list, reject_vals, marker="o", color=color_by_P[P], label=f"mpCN (P={P})")
     if show_pcn and pcn_reject is not None:
         ax.plot(rho_list, pcn_reject, color="black", marker="s", linestyle="--", label="pCN")

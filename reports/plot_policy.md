@@ -8,6 +8,12 @@
 - For independent pCN aggregates, use a distinct linestyle (for example, dotted for mean and
 	dashed for max) and label them explicitly as "pCN indep".
 
+## ESS/MSJD Curves
+- For independent pCN curves, plot ESS as a single dotted line per P (no markers).
+- For MSJD, plot both mean and max for independent pCN (mean dotted, max dashed) using the
+  same color per P to make the pair visually linked.
+- Avoid markers on independent pCN curves so they remain distinguishable from mpCN and pCN.
+
 ## Titles and Labels
 - For per-parameter grids, use subplot titles as $x_1$ and $x_2$ only.
 - Avoid redundant subplot titles when axis labels already indicate the metric.

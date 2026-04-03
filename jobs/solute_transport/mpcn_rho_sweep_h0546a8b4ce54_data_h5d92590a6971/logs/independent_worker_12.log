@@ -1,0 +1,121 @@
+P_list: [2000]
+rho_list: [np.float64(0.0), np.float64(0.05), np.float64(0.1), np.float64(0.15), np.float64(0.2), np.float64(0.25), np.float64(0.3), np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65), np.float64(0.7), np.float64(0.75), np.float64(0.8), np.float64(0.85), np.float64(0.9), np.float64(0.95), np.float64(1.0)]
+n_iters: 300000
+n_diag_samples: 100
+run_pcn: False
+run_mess: False
+run_mpcn: False
+run_independent_pcn: True
+independent_pcn_count: 200
+mpcn_parallel_backend: process
+mpcn_parallel_n_jobs: 12
+mpcn_parallelize_props: False
+mpcn_llh_chunk_size: 0
+checkpoint_interval: 10000
+data_id: data_h5d92590a6971
+run_id: mpcn_rho_sweep_h0546a8b4ce54
+Run directory: /home/senng/multiproposal-internal/estimations/solute_transport/data_h5d92590a6971/sweep/mpcn_rho_sweep_h0546a8b4ce54
+pCN disabled (run_pcn=False).
+pCN independent chain 101/200 done: rho=0.600, accept=0.001, runtime=11.59s
+pCN independent chain 102/200 done: rho=0.600, accept=0.001, runtime=11.87s
+pCN independent chain 103/200 done: rho=0.600, accept=0.001, runtime=15.37s
+pCN independent chain 104/200 done: rho=0.600, accept=0.001, runtime=15.25s
+pCN independent chain 105/200 done: rho=0.600, accept=0.001, runtime=15.38s
+pCN independent chain 106/200 done: rho=0.600, accept=0.001, runtime=14.88s
+pCN independent chain 107/200 done: rho=0.600, accept=0.001, runtime=15.38s
+pCN independent chain 108/200 done: rho=0.600, accept=0.001, runtime=15.15s
+pCN independent chain 109/200 done: rho=0.600, accept=0.001, runtime=15.26s
+pCN independent chain 110/200 done: rho=0.600, accept=0.001, runtime=15.14s
+pCN independent chain 111/200 done: rho=0.600, accept=0.001, runtime=15.06s
+pCN independent chain 112/200 done: rho=0.600, accept=0.001, runtime=14.53s
+pCN independent chain 113/200 done: rho=0.600, accept=0.001, runtime=14.79s
+pCN independent chain 114/200 done: rho=0.600, accept=0.001, runtime=14.69s
+pCN independent chain 115/200 done: rho=0.600, accept=0.001, runtime=15.03s
+pCN independent chain 116/200 done: rho=0.600, accept=0.001, runtime=14.92s
+pCN independent chain 117/200 done: rho=0.600, accept=0.001, runtime=14.98s
+pCN independent chain 118/200 done: rho=0.600, accept=0.001, runtime=15.07s
+pCN independent chain 119/200 done: rho=0.600, accept=0.001, runtime=14.54s
+pCN independent chain 120/200 done: rho=0.600, accept=0.001, runtime=14.95s
+pCN independent chain 121/200 done: rho=0.600, accept=0.001, runtime=14.94s
+pCN independent chain 122/200 done: rho=0.600, accept=0.001, runtime=14.78s
+pCN independent chain 123/200 done: rho=0.600, accept=0.001, runtime=14.81s
+pCN independent chain 124/200 done: rho=0.600, accept=0.001, runtime=14.83s
+pCN independent chain 125/200 done: rho=0.600, accept=0.001, runtime=15.03s
+pCN independent chain 126/200 done: rho=0.600, accept=0.001, runtime=14.91s
+pCN independent chain 127/200 done: rho=0.600, accept=0.001, runtime=15.00s
+pCN independent chain 128/200 done: rho=0.600, accept=0.001, runtime=15.00s
+pCN independent chain 129/200 done: rho=0.600, accept=0.001, runtime=14.98s
+pCN independent chain 130/200 done: rho=0.600, accept=0.001, runtime=14.99s
+pCN independent chain 131/200 done: rho=0.600, accept=0.001, runtime=14.92s
+pCN independent chain 132/200 done: rho=0.600, accept=0.001, runtime=14.92s
+pCN independent chain 133/200 done: rho=0.600, accept=0.001, runtime=14.80s
+pCN independent chain 134/200 done: rho=0.600, accept=0.001, runtime=14.77s
+pCN independent chain 135/200 done: rho=0.600, accept=0.001, runtime=14.90s
+pCN independent chain 136/200 done: rho=0.600, accept=0.001, runtime=14.89s
+pCN independent chain 137/200 done: rho=0.600, accept=0.001, runtime=15.19s
+pCN independent chain 138/200 done: rho=0.600, accept=0.001, runtime=15.10s
+pCN independent chain 139/200 done: rho=0.600, accept=0.001, runtime=14.90s
+pCN independent chain 140/200 done: rho=0.600, accept=0.001, runtime=15.11s
+pCN independent chain 141/200 done: rho=0.600, accept=0.001, runtime=14.82s
+pCN independent chain 142/200 done: rho=0.600, accept=0.001, runtime=14.89s
+pCN independent chain 143/200 done: rho=0.600, accept=0.001, runtime=14.70s
+pCN independent chain 144/200 done: rho=0.600, accept=0.001, runtime=14.80s
+pCN independent chain 145/200 done: rho=0.600, accept=0.001, runtime=14.87s
+pCN independent chain 146/200 done: rho=0.600, accept=0.001, runtime=14.84s
+pCN independent chain 147/200 done: rho=0.600, accept=0.001, runtime=14.92s
+pCN independent chain 148/200 done: rho=0.600, accept=0.001, runtime=14.83s
+pCN independent chain 149/200 done: rho=0.600, accept=0.001, runtime=14.85s
+pCN independent chain 150/200 done: rho=0.600, accept=0.001, runtime=15.01s
+pCN independent chain 151/200 done: rho=0.600, accept=0.001, runtime=14.92s
+pCN independent chain 152/200 done: rho=0.600, accept=0.001, runtime=15.06s
+pCN independent chain 153/200 done: rho=0.600, accept=0.001, runtime=14.99s
+pCN independent chain 154/200 done: rho=0.600, accept=0.001, runtime=15.06s
+pCN independent chain 155/200 done: rho=0.600, accept=0.001, runtime=14.84s
+pCN independent chain 156/200 done: rho=0.600, accept=0.001, runtime=14.82s
+pCN independent chain 157/200 done: rho=0.600, accept=0.001, runtime=15.07s
+pCN independent chain 158/200 done: rho=0.600, accept=0.001, runtime=14.85s
+pCN independent chain 159/200 done: rho=0.600, accept=0.001, runtime=15.09s
+pCN independent chain 160/200 done: rho=0.600, accept=0.001, runtime=15.09s
+pCN independent chain 161/200 done: rho=0.600, accept=0.001, runtime=15.11s
+pCN independent chain 162/200 done: rho=0.600, accept=0.001, runtime=15.20s
+pCN independent chain 163/200 done: rho=0.600, accept=0.001, runtime=15.00s
+pCN independent chain 164/200 done: rho=0.600, accept=0.001, runtime=15.06s
+pCN independent chain 165/200 done: rho=0.600, accept=0.001, runtime=14.87s
+pCN independent chain 166/200 done: rho=0.600, accept=0.001, runtime=14.89s
+pCN independent chain 167/200 done: rho=0.600, accept=0.001, runtime=14.93s
+pCN independent chain 168/200 done: rho=0.600, accept=0.001, runtime=14.90s
+pCN independent chain 169/200 done: rho=0.600, accept=0.001, runtime=14.94s
+pCN independent chain 170/200 done: rho=0.600, accept=0.001, runtime=15.18s
+pCN independent chain 171/200 done: rho=0.600, accept=0.001, runtime=14.77s
+pCN independent chain 172/200 done: rho=0.600, accept=0.001, runtime=15.18s
+pCN independent chain 173/200 done: rho=0.600, accept=0.001, runtime=15.17s
+pCN independent chain 174/200 done: rho=0.600, accept=0.001, runtime=14.94s
+pCN independent chain 175/200 done: rho=0.600, accept=0.001, runtime=21.38s
+pCN independent chain 176/200 done: rho=0.600, accept=0.001, runtime=21.20s
+pCN independent chain 177/200 done: rho=0.600, accept=0.001, runtime=21.77s
+pCN independent chain 178/200 done: rho=0.600, accept=0.001, runtime=21.43s
+pCN independent chain 179/200 done: rho=0.600, accept=0.001, runtime=21.40s
+pCN independent chain 180/200 done: rho=0.600, accept=0.001, runtime=21.41s
+pCN independent chain 181/200 done: rho=0.600, accept=0.001, runtime=21.31s
+pCN independent chain 182/200 done: rho=0.600, accept=0.001, runtime=21.45s
+pCN independent chain 183/200 done: rho=0.600, accept=0.001, runtime=21.51s
+pCN independent chain 184/200 done: rho=0.600, accept=0.001, runtime=21.38s
+pCN independent chain 185/200 done: rho=0.600, accept=0.001, runtime=21.27s
+pCN independent chain 186/200 done: rho=0.600, accept=0.001, runtime=21.49s
+pCN independent chain 187/200 done: rho=0.600, accept=0.001, runtime=21.54s
+pCN independent chain 188/200 done: rho=0.600, accept=0.001, runtime=21.42s
+pCN independent chain 189/200 done: rho=0.600, accept=0.001, runtime=21.20s
+pCN independent chain 190/200 done: rho=0.600, accept=0.001, runtime=21.30s
+pCN independent chain 191/200 done: rho=0.600, accept=0.001, runtime=21.41s
+pCN independent chain 192/200 done: rho=0.600, accept=0.001, runtime=21.62s
+pCN independent chain 193/200 done: rho=0.600, accept=0.001, runtime=21.29s
+pCN independent chain 194/200 done: rho=0.600, accept=0.001, runtime=20.67s
+pCN independent chain 195/200 done: rho=0.600, accept=0.001, runtime=20.42s
+pCN independent chain 196/200 done: rho=0.600, accept=0.001, runtime=20.31s
+pCN independent chain 197/200 done: rho=0.600, accept=0.001, runtime=20.35s
+pCN independent chain 198/200 done: rho=0.600, accept=0.001, runtime=20.08s
+pCN independent chain 199/200 done: rho=0.600, accept=0.001, runtime=20.04s
+pCN independent chain 200/200 done: rho=0.600, accept=0.001, runtime=19.81s
+pCN independent done: rho=0.600, P=200, completed=200
+mPCN disabled (run_mpcn=False).
+MESS disabled (run_mess=False).

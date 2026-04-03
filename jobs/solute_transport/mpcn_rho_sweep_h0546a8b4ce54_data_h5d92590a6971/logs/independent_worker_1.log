@@ -6,7 +6,7 @@ run_pcn: False
 run_mess: False
 run_mpcn: False
 run_independent_pcn: True
-independent_pcn_count: 100
+independent_pcn_count: 200
 mpcn_parallel_backend: process
 mpcn_parallel_n_jobs: 12
 mpcn_parallelize_props: False
@@ -16,6 +16,6 @@ data_id: data_h5d92590a6971
 run_id: mpcn_rho_sweep_h0546a8b4ce54
 Run directory: /home/senng/multiproposal-internal/estimations/solute_transport/data_h5d92590a6971/sweep/mpcn_rho_sweep_h0546a8b4ce54
 pCN disabled (run_pcn=False).
-pCN independent loaded: rho=0.050, P=100, completed=500
+pCN independent loaded: rho=0.050, P=200, completed=500
 mPCN disabled (run_mpcn=False).
 MESS disabled (run_mess=False).

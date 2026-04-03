@@ -1,0 +1,21 @@
+P_list: [2000]
+rho_list: [np.float64(0.0), np.float64(0.05), np.float64(0.1), np.float64(0.15), np.float64(0.2), np.float64(0.25), np.float64(0.3), np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65), np.float64(0.7), np.float64(0.75), np.float64(0.8), np.float64(0.85), np.float64(0.9), np.float64(0.95), np.float64(1.0)]
+n_iters: 300000
+n_diag_samples: 100
+run_pcn: False
+run_mess: False
+run_mpcn: False
+run_independent_pcn: True
+independent_pcn_count: 100
+mpcn_parallel_backend: process
+mpcn_parallel_n_jobs: 12
+mpcn_parallelize_props: False
+mpcn_llh_chunk_size: 0
+checkpoint_interval: 10000
+data_id: data_h5d92590a6971
+run_id: mpcn_rho_sweep_h0546a8b4ce54
+Run directory: /home/senng/multiproposal-internal/estimations/solute_transport/data_h5d92590a6971/sweep/mpcn_rho_sweep_h0546a8b4ce54
+pCN disabled (run_pcn=False).
+pCN independent loaded: rho=0.100, P=100, completed=500
+mPCN disabled (run_mpcn=False).
+MESS disabled (run_mess=False).

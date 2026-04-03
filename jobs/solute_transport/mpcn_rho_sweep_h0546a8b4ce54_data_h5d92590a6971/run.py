@@ -156,17 +156,50 @@ def independent_pcn_dir(estimations_dir):
     return estimations_dir / "chains" / "independent_chains"
 
 
-def independent_pcn_index_path(estimations_dir, P, rho, seed_base):
+def independent_pcn_index_path(estimations_dir, rho, seed_base):
     rho_tag = rho_to_tag(rho)
     chains_dir = independent_pcn_dir(estimations_dir)
-    return chains_dir / f"pcn_independent_P{P}_rho{rho_tag}_seed{seed_base}_index.json"
+    return chains_dir / f"pcn_independent_rho{rho_tag}_seed{seed_base}_index.json"
 
 
-def independent_pcn_chain_path(estimations_dir, P, rho, seed_base, chain_idx):
+def independent_pcn_chain_path(estimations_dir, rho, seed_base, chain_idx):
     rho_tag = rho_to_tag(rho)
     chains_dir = independent_pcn_dir(estimations_dir)
-    stem = f"pcn_independent_P{P}_rho{rho_tag}_seed{seed_base}_chain{chain_idx:04d}"
+    stem = f"pcn_independent_rho{rho_tag}_seed{seed_base}_chain{chain_idx:04d}"
     return chains_dir / f"{stem}.npz"
+
+
+def build_independent_index_from_files(estimations_dir, rho, seed_base):
+    rho_tag = rho_to_tag(rho)
+    chains_dir = independent_pcn_dir(estimations_dir)
+    payload = {
+        "metadata": {
+            "rho": float(rho),
+            "seed_base": int(seed_base),
+        },
+        "chains": [],
+    }
+    pattern = f"pcn_independent_rho{rho_tag}_seed{seed_base}_chain*.npz"
+    for path in sorted(chains_dir.glob(pattern)):
+        stem = path.stem
+        parts = stem.split("_chain")
+        if len(parts) != 2:
+            continue
+        try:
+            chain_idx = int(parts[1])
+        except ValueError:
+            continue
+        payload["chains"].append(
+            {
+                "chain_idx": int(chain_idx),
+                "file": path.name,
+                "seed": None,
+                "accept_rate": None,
+                "runtime_sec": None,
+            }
+        )
+    payload["chains"].sort(key=lambda x: x["chain_idx"])
+    return payload
 
 
 def load_independent_index(index_path):
@@ -817,20 +850,22 @@ def main():
         rho_grid = rho_list[args.grid_index:: args.grid_count]
         for rho in rho_grid:
             index_path = independent_pcn_index_path(
-                estimations_dir, independent_P, rho=rho, seed_base=seed_base
+                estimations_dir, rho=rho, seed_base=seed_base
             )
             index_payload = load_independent_index(index_path)
             if index_payload is None:
-                index_payload = {
-                    "metadata": {
-                        "P": int(independent_P),
+                index_payload = build_independent_index_from_files(
+                    estimations_dir, rho=rho, seed_base=seed_base
+                )
+                index_payload["metadata"].update(
+                    {
                         "rho": float(rho),
                         "seed_base": int(seed_base),
                         "n_iters": int(n_iters),
                         "dim": int(problem.dim),
-                    },
-                    "chains": [],
-                }
+                    }
+                )
+                save_independent_index(index_path, index_payload)
             chains = index_payload.get("chains", [])
             index_payload["chains"] = chains
             completed = len(chains)
@@ -845,7 +880,7 @@ def main():
             for idx in range(completed, independent_P):
                 seed = seed_base + rho_seed * 10000 + idx
                 chain_path = independent_pcn_chain_path(
-                    estimations_dir, independent_P, rho=rho, seed_base=seed_base, chain_idx=idx
+                    estimations_dir, rho=rho, seed_base=seed_base, chain_idx=idx
                 )
                 if chain_path.exists():
                     chains.append(

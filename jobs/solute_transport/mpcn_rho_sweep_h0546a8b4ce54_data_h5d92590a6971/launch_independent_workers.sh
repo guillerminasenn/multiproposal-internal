@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUN_PY="$SCRIPT_DIR/run.py"
+ROOT_DIR="$SCRIPT_DIR/../../.."
+ENV_BIN="$ROOT_DIR/.multip-env/bin"
 
 GRID_COUNT=${1:-""}
 INDEPENDENT_COUNT=${2:-500}
@@ -11,7 +13,7 @@ LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
 
 if [[ -z "$GRID_COUNT" ]]; then
-  GRID_COUNT=$(RUN_PY="$RUN_PY" python - <<'PY'
+  GRID_COUNT=$(RUN_PY="$RUN_PY" PYTHON_BIN="$ENV_BIN/python" "$ENV_BIN/python" - <<'PY'
 import ast
 import os
 from pathlib import Path
@@ -50,7 +52,7 @@ echo "Launching $GRID_COUNT independent-chain workers (P=$INDEPENDENT_COUNT)..."
 for i in $(seq 0 $((GRID_COUNT - 1))); do
   LOG_FILE="$LOG_DIR/independent_worker_${i}.log"
   echo "  worker $i -> $LOG_FILE"
-  python "$RUN_PY" \
+  "$ENV_BIN/python" "$RUN_PY" \
     --skip-mpcn \
     --skip-pcn \
     --skip-mess \

@@ -55,8 +55,11 @@ Required layout:
 ## Independent chain sweeps
 - For independent-chain variants that reuse a base run_id, store outputs under a subfolder of
   the main chains directory (for example, estimations/.../chains/independent_chains).
-- Use a stable naming scheme such as pcn_independent_P{P}_rho{rho}_seed{seed}.npz with a
-  matching _metrics.json file so notebooks can discover and aggregate the chains.
+- Use a stable naming scheme for each chain such as
+  pcn_independent_rho{rho}_seed{seed}_chain{idx}.npz, where {idx} is the chain index.
+- Store an index file per rho (for example, pcn_independent_rho{rho}_seed{seed}_index.json)
+  that lists the chain files and metadata; notebooks should discover chains via the index.
+- Treat P as the number of independent chains to aggregate, not as part of the filename.
 
 ## Variants and sub-experiments
 - For secondary experiments that share the same base run configuration (e.g., random-start sweeps), save under a subfolder of the main run directory (for example, estimations_dir/random_start).

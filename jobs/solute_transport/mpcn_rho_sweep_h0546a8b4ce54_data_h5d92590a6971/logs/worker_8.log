@@ -33,3 +33,5 @@ pCN loaded: rho=0.850, accept=0.005, runtime=1.63s
 pCN loaded: rho=0.900, accept=0.010, runtime=1.67s
 pCN loaded: rho=0.950, accept=0.021, runtime=1.65s
 pCN loaded: rho=1.000, accept=1.000, runtime=1.66s
+Estimating ESS for each parameter.
+mPCN done: P=2000, rho=0.400, accept=0.255, runtime=53601.56s

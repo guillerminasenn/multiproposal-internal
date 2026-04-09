@@ -60,6 +60,9 @@ Required layout:
 - Store an index file per rho (for example, pcn_independent_rho{rho}_seed{seed}_index.json)
   that lists the chain files and metadata; notebooks should discover chains via the index.
 - Treat P as the number of independent chains to aggregate, not as part of the filename.
+- Do not include the number of chains requested in the data_id or run_id hash.
+- When loading an index, validate only the algorithmic metadata; allow chain counts to change
+  so additional chains can be appended to an existing run folder.
 
 ## Variants and sub-experiments
 - For secondary experiments that share the same base run configuration (e.g., random-start sweeps), save under a subfolder of the main run directory (for example, estimations_dir/random_start).

@@ -21,6 +21,16 @@ Goal: outputs are stored under run-specific folders that uniquely identify datas
 - Keep notebooks focused on loading cached outputs and plotting, not running chains.
 - Each job script should mirror the run_id/data_id used for estimations and reports.
 
+## How to run jobs (commands)
+- From the repo root, launch independent-chain workers with:
+  - bash jobs/<dataset>/<run_id>_data_<data_id>/launch_independent_workers.sh
+- Optional arguments:
+  - bash jobs/<dataset>/<run_id>_data_<data_id>/launch_independent_workers.sh <grid_count> <pcn_count> <mpcn_count>
+- Example (12 workers, 100 pCN, 100 mPCN):
+  - bash jobs/solute_transport/mpcn_pcn_convergence_h57eaaa0da6e8_data_h4afe80f670cc/launch_independent_workers.sh 12 100 100
+- Check logs while running:
+  - tail -f jobs/<dataset>/<run_id>_data_<data_id>/logs/independent_worker_0.log
+
 ## Grid sharding (P, rho sweeps)
 - Prefer launching multiple job scripts with disjoint (P, rho) subsets over nested process pools.
 - Use deterministic grid slicing (for example, grid_index/grid_count) so reruns are reproducible.
@@ -80,6 +90,12 @@ Required layout:
 - Write a progress JSON file with completed_iters, total_iters, and timestamp so status can be read
   without opening the chain file.
 - Keep checkpoints as execution metadata; do not include them in the run_id hash.
+- Independent-chain jobs should write per-chain progress JSON files next to each chain file
+  (for example, <stem>.progress.json) and update them at the same checkpoint interval.
+- Independent-chain jobs should write per-chain partial chains in the same folder as the final chain
+  (for example, <stem>_partial.npz).
+- Store per-chain metrics/diagnostics in a diagnostics subfolder under the run directory
+  (for example, estimations/.../diagnostics/independent_chains/<stem>_metrics.json).
 
 ## Parallelization implementation pattern
 - Keep the vectorized path as the default and add an opt-in switch (for example, parallelize_props) to enable proposal-level parallelism.

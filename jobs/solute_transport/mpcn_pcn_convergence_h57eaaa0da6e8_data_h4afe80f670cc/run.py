@@ -200,10 +200,19 @@ def sample_prior_points(rng, prior_diag, count):
     return z * np.sqrt(prior_diag)[None, :]
 
 
+def _pcn_replicate_dir(chains_dir, chain_idx):
+    """Return the per-replicate directory for pCN outputs."""
+    return chains_dir / f"replicate_{chain_idx:03d}"
+
+
 def pcn_chain_path(chains_dir, rho, seed_base, chain_idx):
     """Return the expected pCN independent chain path."""
     rho_tag = format_float_tag(rho)
-    return chains_dir / f"pcn_independent_rho{rho_tag}_seed{seed_base}_chain{chain_idx:03d}.npz"
+    replicate_dir = _pcn_replicate_dir(chains_dir, chain_idx)
+    return (
+        replicate_dir
+        / f"pcn_independent_rho{rho_tag}_seed{seed_base}_chain{chain_idx:03d}.npz"
+    )
 
 
 def pcn_index_path(chains_dir, rho, seed_base):
@@ -298,7 +307,7 @@ def build_index_from_files(chains_dir, pattern, expected_meta):
         "metadata": dict(expected_meta),
         "chains": [],
     }
-    for path in sorted(chains_dir.glob(pattern)):
+    for path in sorted(chains_dir.rglob(pattern)):
         stem = path.stem
         parts = stem.split("_chain")
         if len(parts) != 2:
@@ -310,7 +319,7 @@ def build_index_from_files(chains_dir, pattern, expected_meta):
         payload["chains"].append(
             {
                 "chain_idx": int(chain_idx),
-                "file": path.name,
+                "file": str(path.relative_to(chains_dir)),
                 "seed": None,
                 "start_index": int(chain_idx),
             }
@@ -509,8 +518,8 @@ def run_mpcn_chain_with_checkpoints(
 def parse_args():
     """Parse command-line arguments for independent chain jobs."""
     parser = argparse.ArgumentParser(description="Run independent pCN/mPCN chains for solute transport.")
-    parser.add_argument("--pcn-count", type=int, default=100)
-    parser.add_argument("--mpcn-count", type=int, default=100)
+    parser.add_argument("--pcn-count", type=int, default=50)
+    parser.add_argument("--mpcn-count", type=int, default=0)
     parser.add_argument("--grid-count", type=int, default=1)
     parser.add_argument("--grid-index", type=int, default=0)
     parser.add_argument("--skip-pcn", action="store_true")
@@ -543,7 +552,7 @@ def main():
     shared_draws_seed = seed_data
     obs_config = "central_modes"
 
-    n_iters = 100000
+    n_iters = 20000
     rho = 0.9
     P = 100
     burn_in = 0

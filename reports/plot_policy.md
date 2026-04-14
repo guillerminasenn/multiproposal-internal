@@ -8,6 +8,7 @@
 - For independent pCN aggregates, use a distinct linestyle (for example, dotted for mean and
 	dashed for max) and label them explicitly as "pCN indep".
 - For norms in LaTeX titles/labels, use a single bar like $|A|$ (avoid double bars).
+- In raw Python strings for LaTeX, use a single backslash (for example, r"$\varphi$", not r"$\\varphi$").
 
 ## ESS/MSJD Curves
 - For independent pCN curves, plot ESS as a single dotted line per P (no markers).

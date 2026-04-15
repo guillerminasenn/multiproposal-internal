@@ -1,4 +1,11 @@
-"""Observable and MSE utilities for diagnostics."""
+"""Observable and MSE utilities for diagnostics.
+
+This module defines a small abstraction around diagnostic functionals of a
+parameter vector or of the antisymmetric matrix reconstructed from that vector.
+The notebook code uses these helpers to build a named list of observables once,
+then reuses the same definitions for trace plots, cached posterior targets, and
+running-MSE calculations.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +17,12 @@ import numpy as np
 
 @dataclass(frozen=True)
 class Observable:
+    """A scalar quantity that can be evaluated on one sample or an entire chain.
+
+    `value_fn` maps a single sample to one float.
+    `series_fn`, when provided, vectorizes that computation over a whole chain
+    and is preferred for expensive or easily batched observables.
+    """
     obs_id: int
     name: str
     label: str
@@ -140,8 +153,15 @@ def make_antisymmetric_A_observables(
     full_row: bool = False,
     row_indices: Optional[Sequence[int]] = None,
 ) -> List[Observable]:
-    """Factory for A-matrix observables with configured parameters."""
+    """Factory for A-matrix observables with configured parameters.
+
+    The returned objects expect a full antisymmetric matrix `A`, not the packed
+    upper-triangular parameter vector. The notebook wraps these observables so
+    they can still be applied directly to parameter samples.
+    """
     observables: List[Observable] = [
+        # Each lambda captures the current hyperparameter value so the returned
+        # Observable remains stable even if outer variables are changed later.
         Observable(
             101,
             f"BandEnergy_k{k_band}",
@@ -197,16 +217,27 @@ def make_antisymmetric_A_observables(
 
 
 def make_parameter_observables(problem, dim: int) -> List[Observable]:
-    """Factory for parameter-space observables used in solute transport."""
+    """Factory for parameter-space observables used in solute transport.
+
+    These observables act directly on the packed parameter vector stored in the
+    chains. For each quantity we define:
+    - a scalar evaluator for one sample (`value_fn`)
+    - a vectorized chain evaluator (`series_fn`) when batching is easy
+
+    The IDs are stable so notebooks can select subsets by ID without depending
+    on the list order.
+    """
     if dim < 2:
         raise ValueError("dim must be >= 2 for first-row observables.")
 
     def _potential_scalar(params: np.ndarray) -> float:
+        # This is the negative log-likelihood up to an additive constant.
         theta = problem.theta_from_params(params)
         resid = problem.y - theta[problem.obs_indices]
         return float(0.5 * np.dot(resid, resid) / (problem.sigma ** 2))
 
     def _potential_series(chain: np.ndarray) -> np.ndarray:
+        # Potential evaluation is problem-dependent, so we loop sample-by-sample.
         series = np.empty(chain.shape[0], dtype=float)
         for idx, params in enumerate(chain):
             series[idx] = _potential_scalar(params)
@@ -234,6 +265,8 @@ def make_parameter_observables(problem, dim: int) -> List[Observable]:
         return np.linalg.norm(chain, axis=1)
 
     return [
+        # The first two observables summarize the "first row" block of the
+        # packed upper-triangular parameterization used in these experiments.
         Observable(1, "FirstRowMean", r"$\bar{x}_{1:d-1}$", _mean_first_row, _mean_first_row_series),
         Observable(2, "FirstRowVar", r"$\mathrm{Var}(x_{1:d-1})$", _var_first_row, _var_first_row_series),
         Observable(3, "FirstComponent", r"$x_{0}$", lambda p: float(p[0]), lambda c: c[:, 0]),
@@ -252,7 +285,11 @@ def select_observables(observables: Sequence[Observable], obs_ids: Sequence[int]
 
 
 def observable_series(chain: np.ndarray, obs: Observable, n_iter: Optional[int] = None) -> np.ndarray:
-    """Compute observable series for a chain."""
+    """Compute observable series for a chain.
+
+    If a vectorized `series_fn` is available, use it. Otherwise fall back to
+    applying the scalar function sample-by-sample.
+    """
     if obs.series_fn is None:
         series = np.array([obs.value_fn(params) for params in chain])
     else:
@@ -297,7 +334,11 @@ def compute_observable_targets(
     observables: Sequence[Observable],
     burn_in: int,
 ) -> List[float]:
-    """Posterior-mean targets computed from per-chain means."""
+    """Posterior-mean targets computed from per-chain means.
+
+    For each observable, this computes the post-burn-in mean inside each chain
+    and then averages those per-chain means across chains.
+    """
     targets = []
     for obs in observables:
         chain_means = []

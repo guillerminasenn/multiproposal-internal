@@ -88,6 +88,10 @@ def plot_trace_grid(
 
     rho_list_plot = list(rho_list_plot)
     nrows = int(np.ceil(len(rho_list_plot) / ncols))
+    rho_highlight = 1.0
+    highlight_lw = 1.5
+    trace_lw = 0.5
+    legend_lw = 2.0
 
     for P in P_list:
         fig, axes = plt.subplots(nrows, ncols, figsize=(4.2 * ncols, 3.2 * nrows), sharex=True, sharey=True)
@@ -99,24 +103,29 @@ def plot_trace_grid(
             segment = chain[start:end]
             if segment.size == 0:
                 continue
-            ax.plot(segment[:, 0], color="#1f77b4", linewidth=0.5, label=r"$x_1$", alpha=0.8)
-            ax.plot(segment[:, 1], color="red", linewidth=0.5, label=r"$x_2$", alpha=0.4)
+            is_highlight = np.isclose(rho, rho_highlight, rtol=1e-6, atol=1e-8)
+            lw = highlight_lw if is_highlight else trace_lw
+            ax.plot(segment[:, 0], color="#1f77b4", linewidth=lw, label=r"$x_1$", alpha=0.8)
+            ax.plot(segment[:, 1], color="red", linewidth=lw, label=r"$x_2$", alpha=0.4)
             ax.set_title(fr"$P={P}, \rho={rho:.2f}$")
-            ax.grid(alpha=0.3)
 
         for ax in axes[len(rho_list_plot):]:
             ax.axis("off")
 
-        handles, labels = axes[0].get_legend_handles_labels()
-        if handles:
-            fig.legend(
-                handles,
-                labels,
-                loc="upper right",
-                bbox_to_anchor=(1.02, 0.92),
-                ncol=2,
-                frameon=False,
-            )
+        _shared_ylim(axes[: len(rho_list_plot)])
+
+        handles = [
+            Line2D([0], [0], color="#1f77b4", linewidth=legend_lw, label=r"$x_1$"),
+            Line2D([0], [0], color="red", linewidth=legend_lw, label=r"$x_2$"),
+        ]
+        fig.legend(
+            handles,
+            [r"$x_1$", r"$x_2$"],
+            loc="upper right",
+            bbox_to_anchor=(1.02, 0.92),
+            ncol=2,
+            frameon=False,
+        )
 
         fig.suptitle(f"mpCN trace plots (P={P})")
         fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.92))

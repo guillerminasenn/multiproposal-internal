@@ -1,0 +1,52 @@
+P_list: [10, 30, 50, 100]
+rho_list: [np.float64(0.0), np.float64(0.025), np.float64(0.05), np.float64(0.075), np.float64(0.1), np.float64(0.125), np.float64(0.15), np.float64(0.175), np.float64(0.2), np.float64(0.225), np.float64(0.25), np.float64(0.275), np.float64(0.3), np.float64(0.325), np.float64(0.35), np.float64(0.375), np.float64(0.4), np.float64(0.425), np.float64(0.45), np.float64(0.475), np.float64(0.5), np.float64(0.525), np.float64(0.55), np.float64(0.575), np.float64(0.6), np.float64(0.625), np.float64(0.65), np.float64(0.675), np.float64(0.7), np.float64(0.725), np.float64(0.75), np.float64(0.775), np.float64(0.8), np.float64(0.825), np.float64(0.85), np.float64(0.875), np.float64(0.9), np.float64(0.925), np.float64(0.95), np.float64(0.975), np.float64(1.0)]
+n_iters: 300000
+n_diag_samples: 100
+run_mtpcn: False
+checkpoint_interval: 10000
+data_id: data_h37adb6467e8e
+run_id: rho_sweep_h3262d0adfe72
+Run directory: /home/senng/multiproposal-internal/estimations/polar_twist/data_h37adb6467e8e/sweep/rho_sweep_h3262d0adfe72
+mTPCN loaded: P=10, rho=0.050, accept=0.498, runtime=22.44s
+mTPCN loaded: P=10, rho=0.250, accept=0.507, runtime=23.28s
+mTPCN loaded: P=10, rho=0.450, accept=0.527, runtime=28.01s
+mTPCN loaded: P=10, rho=0.650, accept=0.565, runtime=28.43s
+Estimating ESS for each parameter.
+mTPCN done: P=10, rho=0.850, accept=0.646, runtime=50.58s
+Estimating ESS for each parameter.
+mTPCN done: P=30, rho=0.025, accept=0.693, runtime=85.11s
+Estimating ESS for each parameter.
+mTPCN done: P=30, rho=0.225, accept=0.701, runtime=76.53s
+Estimating ESS for each parameter.
+mTPCN done: P=30, rho=0.425, accept=0.711, runtime=89.81s
+Estimating ESS for each parameter.
+mTPCN done: P=30, rho=0.625, accept=0.731, runtime=74.26s
+Estimating ESS for each parameter.
+mTPCN done: P=30, rho=0.825, accept=0.771, runtime=80.16s
+Estimating ESS for each parameter.
+mTPCN done: P=50, rho=0.000, accept=0.760, runtime=133.11s
+Estimating ESS for each parameter.
+mTPCN done: P=50, rho=0.200, accept=0.764, runtime=141.11s
+Estimating ESS for each parameter.
+mTPCN done: P=50, rho=0.400, accept=0.771, runtime=168.58s
+Estimating ESS for each parameter.
+mTPCN done: P=50, rho=0.600, accept=0.784, runtime=170.43s
+Estimating ESS for each parameter.
+mTPCN done: P=50, rho=0.800, accept=0.807, runtime=159.14s
+Estimating ESS for each parameter.
+Warning: Centered chain variance is zero. Returning ESS = 0.
+Warning: Centered chain variance is zero. Returning ESS = 0.
+mTPCN done: P=50, rho=1.000, accept=1.000, runtime=166.20s
+Estimating ESS for each parameter.
+mTPCN done: P=100, rho=0.175, accept=0.833, runtime=322.78s
+Estimating ESS for each parameter.
+mTPCN done: P=100, rho=0.375, accept=0.832, runtime=320.15s
+Estimating ESS for each parameter.
+mTPCN done: P=100, rho=0.575, accept=0.836, runtime=282.37s
+mTPCN loaded: P=100, rho=0.775, accept=0.847, runtime=227.31s
+Estimating ESS for each parameter.
+mTPCN done: P=100, rho=0.975, accept=0.913, runtime=158.97s
+parameter.
+mTPCN done: P=100, rho=0.775, accept=0.847, runtime=227.31s
+Estimating ESS for each parameter.
+mTPCN done: P=100, rho=0.975, accept=0.913, runtime=175.96s

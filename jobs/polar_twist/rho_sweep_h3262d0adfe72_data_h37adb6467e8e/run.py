@@ -125,7 +125,7 @@ def chain_cache_paths(estimations_dir, method, rho, seed_base, P=None):
         stem = f"{method}_rho{rho_tag}_seed{seed_base}"
     else:
         stem = f"{method}_P{P}_rho{rho_tag}_seed{seed_base}"
-    chains_dir = estimations_dir / "chains"
+    chains_dir = estimations_dir / "chains" / method
     samples_path = chains_dir / f"{stem}.npz"
     metrics_path = chains_dir / f"{stem}_metrics.json"
     return samples_path, metrics_path

@@ -82,6 +82,8 @@ def plot_trace_grid(
     file_name_kwargs=None,
     max_iters=30000,
     ncols=3,
+    method_key="mpcn",
+    method_label="mpCN",
 ):
     """Plot trace subplots for each P with a shared legend."""
     apply_pub_style()
@@ -97,7 +99,7 @@ def plot_trace_grid(
         fig, axes = plt.subplots(nrows, ncols, figsize=(4.2 * ncols, 3.2 * nrows), sharex=True, sharey=True)
         axes = np.array(axes).reshape(-1)
         for ax, rho in zip(axes, rho_list_plot):
-            chain = results["mpcn"][P][rho]["chain"]
+            chain = results[method_key][P][rho]["chain"]
             start = min(burn_in, chain.shape[0])
             end = min(start + max_iters, chain.shape[0])
             segment = chain[start:end]
@@ -127,7 +129,7 @@ def plot_trace_grid(
             frameon=False,
         )
 
-        fig.suptitle(f"mpCN trace plots (P={P})")
+        fig.suptitle(f"{method_label} trace plots (P={P})")
         fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.92))
         reports_dir.mkdir(parents=True, exist_ok=True)
         format_kwargs = {"P": P, "seed_base": seed_base}
@@ -159,6 +161,8 @@ def plot_ess_msjd_vs_rho(
     share_y_metrics=False,
     show_independent=False,
     independent_label_prefix="pCN indep",
+    method_key="mpcn",
+    method_label="mpCN",
 ):
     """Plot ESS/MSJD vs rho curves for each P."""
     apply_pub_style()
@@ -200,14 +204,14 @@ def plot_ess_msjd_vs_rho(
 
     for P in P_sorted:
         ess_vals = [
-            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("ess_mean", np.nan)
-            if _get_entry(results.get("mpcn"), P, rho) is not None
+            _get_entry(results.get(method_key), P, rho).get("metrics", {}).get("ess_mean", np.nan)
+            if _get_entry(results.get(method_key), P, rho) is not None
             else np.nan
             for rho in rho_list
         ]
         if normalize_ess:
             counts = [
-                _post_sample_count(_get_entry(results.get("mpcn"), P, rho), burn_in)
+                _post_sample_count(_get_entry(results.get(method_key), P, rho), burn_in)
                 for rho in rho_list
             ]
             ess_vals = [
@@ -219,7 +223,7 @@ def plot_ess_msjd_vs_rho(
             marker="o",
             markersize=3,
             color=color_by_P[P],
-            label=f"mpCN (P={P})",
+            label=f"{method_label} (P={P})",
         )
         ax_ess_max.plot(
             rho_list,
@@ -227,7 +231,7 @@ def plot_ess_msjd_vs_rho(
             marker="o",
             markersize=3,
             color=color_by_P[P],
-            label=f"mpCN (P={P})",
+            label=f"{method_label} (P={P})",
         )
         if show_independent and results.get("pcn_independent"):
             indep_entries = results["pcn_independent"].get(P)
@@ -290,8 +294,8 @@ def plot_ess_msjd_vs_rho(
 
     for P in P_sorted:
         msjd_vals = [
-            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
-            if _get_entry(results.get("mpcn"), P, rho) is not None
+            _get_entry(results.get(method_key), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
+            if _get_entry(results.get(method_key), P, rho) is not None
             else np.nan
             for rho in rho_list
         ]
@@ -301,7 +305,7 @@ def plot_ess_msjd_vs_rho(
             marker="o",
             markersize=3,
             color=color_by_P[P],
-            label=f"mpCN (P={P})",
+            label=f"{method_label} (P={P})",
         )
         if show_independent and results.get("pcn_independent"):
             indep_entries = results["pcn_independent"].get(P)
@@ -352,13 +356,13 @@ def plot_ess_msjd_vs_rho(
         _shared_ylim([ax_ess_mean, ax_msjd_mean])
 
     color_handles = [
-        Line2D([0], [0], color=color_by_P[P], linewidth=2, label=f"mpCN (P={P})")
+        Line2D([0], [0], color=color_by_P[P], linewidth=2, label=f"{method_label} (P={P})")
         for P in P_sorted
     ]
     if show_pcn and pcn_ess is not None:
         color_handles.append(Line2D([0], [0], color="black", linewidth=2, label="pCN"))
     line_handles = [
-        Line2D([0], [0], color="gray", linestyle="-", linewidth=2, label="mpCN/pCN"),
+        Line2D([0], [0], color="gray", linestyle="-", linewidth=2, label=f"{method_label}/pCN"),
     ]
     if show_independent and results.get("pcn_independent"):
         line_handles.append(Line2D([0], [0], color="gray", linestyle="--", linewidth=2, label="independent chains"))
@@ -388,8 +392,8 @@ def plot_ess_msjd_vs_rho(
 
     for P in P_sorted:
         msjd_max_vals = [
-            _get_entry(results.get("mpcn"), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
-            if _get_entry(results.get("mpcn"), P, rho) is not None
+            _get_entry(results.get(method_key), P, rho).get("metrics", {}).get("msjd_mean", np.nan)
+            if _get_entry(results.get(method_key), P, rho) is not None
             else np.nan
             for rho in rho_list
         ]
@@ -399,7 +403,7 @@ def plot_ess_msjd_vs_rho(
             marker="o",
             markersize=3,
             color=color_by_P[P],
-            label=f"mpCN (P={P})",
+            label=f"{method_label} (P={P})",
         )
         if show_independent and results.get("pcn_independent"):
             indep_entries = results["pcn_independent"].get(P)
@@ -499,6 +503,8 @@ def plot_ess_msjd_per_param_vs_rho(
     share_y_metrics=False,
     show_independent=False,
     independent_label_prefix="pCN indep",
+    method_key="mpcn",
+    method_label="mpCN",
 ):
     """Plot ESS/MSJD per-parameter vs rho."""
     apply_pub_style()
@@ -516,10 +522,10 @@ def plot_ess_msjd_per_param_vs_rho(
     ax_ess_x1_x, ax_msjd_max_x1 = axes_max[0]
     ax_ess_x2_x, ax_msjd_max_x2 = axes_max[1]
     for P in P_sorted:
-        ess_x1 = [_get_param_metric(results.get("mpcn", {}), P, rho, "ess_per_param", 0) for rho in rho_list]
-        ess_x2 = [_get_param_metric(results.get("mpcn", {}), P, rho, "ess_per_param", 1) for rho in rho_list]
-        msjd_x1 = [_get_param_metric(results.get("mpcn", {}), P, rho, "msjd_per_param", 0) for rho in rho_list]
-        msjd_x2 = [_get_param_metric(results.get("mpcn", {}), P, rho, "msjd_per_param", 1) for rho in rho_list]
+        ess_x1 = [_get_param_metric(results.get(method_key, {}), P, rho, "ess_per_param", 0) for rho in rho_list]
+        ess_x2 = [_get_param_metric(results.get(method_key, {}), P, rho, "ess_per_param", 1) for rho in rho_list]
+        msjd_x1 = [_get_param_metric(results.get(method_key, {}), P, rho, "msjd_per_param", 0) for rho in rho_list]
+        msjd_x2 = [_get_param_metric(results.get(method_key, {}), P, rho, "msjd_per_param", 1) for rho in rho_list]
         if normalize_ess:
             counts = [
                 _post_sample_count(_get_entry(results.get("mpcn"), P, rho), burn_in)
@@ -725,13 +731,13 @@ def plot_ess_msjd_per_param_vs_rho(
         _shared_ylim([ax_msjd_max_x1, ax_msjd_max_x2])
 
     color_handles = [
-        Line2D([0], [0], color=color_by_P[P], linewidth=2, label=f"mpCN (P={P})")
+        Line2D([0], [0], color=color_by_P[P], linewidth=2, label=f"{method_label} (P={P})")
         for P in P_sorted
     ]
     if show_pcn and run_pcn and results.get("pcn"):
         color_handles.append(Line2D([0], [0], color="black", linewidth=2, label="pCN"))
     line_handles = [
-        Line2D([0], [0], color="gray", linestyle="-", linewidth=2, label="mpCN/pCN"),
+        Line2D([0], [0], color="gray", linestyle="-", linewidth=2, label=f"{method_label}/pCN"),
     ]
     if show_independent and results.get("pcn_independent"):
         line_handles.append(Line2D([0], [0], color="gray", linestyle="--", linewidth=2, label="independent chains"))
@@ -797,6 +803,8 @@ def plot_rejection_vs_rho(
     file_name_kwargs=None,
     show_pcn=True,
     title_prefix="Multiwell",
+    method_key="mpcn",
+    method_label="mpCN",
 ):
     """Plot rejection rate vs rho curves for each P."""
     apply_pub_style()
@@ -820,12 +828,12 @@ def plot_rejection_vs_rho(
 
     for P in P_sorted:
         reject_vals = [
-            1.0 - _get_entry(results.get("mpcn"), P, rho).get("accept_rate", np.nan)
-            if _get_entry(results.get("mpcn"), P, rho) is not None
+            1.0 - _get_entry(results.get(method_key), P, rho).get("accept_rate", np.nan)
+            if _get_entry(results.get(method_key), P, rho) is not None
             else np.nan
             for rho in rho_list
         ]
-        ax.plot(rho_list, reject_vals, marker="o", color=color_by_P[P], label=f"mpCN (P={P})")
+        ax.plot(rho_list, reject_vals, marker="o", color=color_by_P[P], label=f"{method_label} (P={P})")
     if show_pcn and pcn_reject is not None:
         ax.plot(rho_list, pcn_reject, color="black", marker="s", linestyle="--", label="pCN")
 

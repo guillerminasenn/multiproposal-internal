@@ -31,6 +31,10 @@ def make_hist_grid_comps(
 	hide_plot=True,
 	label_map=None,
 	font_size=14,
+	tick_label_size=None,
+	axis_label_size=None,
+	x_label_size=None,
+	y_label_size=None,
 	title=None,
 	figsize=(15, 15),
 	true_values=None,
@@ -38,6 +42,19 @@ def make_hist_grid_comps(
 	"""Grid of 1D/2D histograms for selected components."""
 	samples = np.asarray(samples)
 	comp_samples = [_get_component(samples, j) for j in comp_list]
+	resolved_tick_size = font_size if tick_label_size is None else tick_label_size
+	if x_label_size is not None:
+		resolved_x_label_size = x_label_size
+	elif axis_label_size is not None:
+		resolved_x_label_size = axis_label_size
+	else:
+		resolved_x_label_size = font_size
+	if y_label_size is not None:
+		resolved_y_label_size = y_label_size
+	elif axis_label_size is not None:
+		resolved_y_label_size = axis_label_size
+	else:
+		resolved_y_label_size = font_size
 
 	numbins = int(2 * R / dr)
 	x_bins = np.linspace(-R, R, numbins)
@@ -100,12 +117,12 @@ def make_hist_grid_comps(
 					axs[i, j].add_patch(ellipse)
 		for ax in axs.flat:
 			ax.label_outer()
-			ax.tick_params(labelsize=font_size)
+			ax.tick_params(labelsize=resolved_tick_size)
 
 	for i, comp in enumerate(comp_list):
 		x_label = _format_label(comp)
-		axs[-1, i].set_xlabel(x_label, fontsize=font_size)
-		axs[i, 0].set_ylabel(x_label, fontsize=font_size)
+		axs[-1, i].set_xlabel(x_label, fontsize=resolved_x_label_size)
+		axs[i, 0].set_ylabel(x_label, fontsize=resolved_y_label_size)
 
 	if title is None:
 		title = "Posterior Marginals and Pairwise Densities"

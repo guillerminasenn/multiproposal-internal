@@ -7,46 +7,13 @@ checkpoint_interval: 10000
 data_id: data_h37adb6467e8e
 run_id: rho_sweep_h3262d0adfe72
 Run directory: /home/senng/multiproposal-internal/estimations/polar_twist/data_h37adb6467e8e/sweep/rho_sweep_h3262d0adfe72
-mTPCN loaded: P=10, rho=0.075, accept=0.497, runtime=23.69s
-mTPCN loaded: P=10, rho=0.275, accept=0.510, runtime=23.70s
-mTPCN loaded: P=10, rho=0.475, accept=0.528, runtime=28.25s
-mTPCN loaded: P=10, rho=0.675, accept=0.572, runtime=28.44s
 Estimating ESS for each parameter.
-mTPCN done: P=10, rho=0.875, accept=0.664, runtime=48.15s
+pCN done: rho=0.075, accept=0.109, runtime=2.28s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.050, accept=0.694, runtime=78.57s
+pCN done: rho=0.275, accept=0.113, runtime=2.20s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.250, accept=0.701, runtime=76.24s
+pCN done: rho=0.475, accept=0.121, runtime=2.21s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.450, accept=0.713, runtime=91.74s
+pCN done: rho=0.675, accept=0.142, runtime=2.21s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.650, accept=0.736, runtime=101.51s
-Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.850, accept=0.781, runtime=73.59s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.025, accept=0.761, runtime=112.30s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.225, accept=0.764, runtime=112.60s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.425, accept=0.771, runtime=112.38s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.625, accept=0.785, runtime=119.62s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.825, accept=0.813, runtime=117.40s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.000, accept=0.831, runtime=217.29s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.200, accept=0.832, runtime=253.85s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.400, accept=0.832, runtime=308.22s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.600, accept=0.836, runtime=306.36s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.800, accept=0.847, runtime=199.64s
-Estimating ESS for each parameter.
-Warning: Centered chain variance is zero. Returning ESS = 0.
-Warning: Centered chain variance is zero. Returning ESS = 0.
-mTPCN done: P=100, rho=1.000, accept=1.000, runtime=151.50s
- ESS = 0.
-Warning: Centered chain variance is zero. Returning ESS = 0.
-mTPCN done: P=100, rho=1.000, accept=1.000, runtime=175.42s
+pCN done: rho=0.875, accept=0.209, runtime=2.22s

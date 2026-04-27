@@ -9,6 +9,7 @@ import numpy as np
 
 from multiproposal.algorithms.effective_sample_size import estimate_effective_sample_size
 from multiproposal.algorithms.mtpcn import mtpcn_chain
+from multiproposal.algorithms.pcn import pcn_chain
 from multiproposal.problems.toy_custom_likelihood import ToyCustomLikelihood2D
 from multiproposal.utils.run_paths import format_float_tag
 
@@ -286,8 +287,8 @@ def main():
     P_list = [10, 30, 50, 100]
     rho_list = [round(val, 3) for val in np.arange(0, 1.01, 0.025)]
     seed_base = 202
-    run_pcn = False
-    run_mpcn = True
+    run_pcn = True
+    run_mpcn = False
     run_mtpcn = False
     run_mess = False
 
@@ -351,10 +352,18 @@ def main():
     for path in (estimations_dir, reports_dir):
         path.mkdir(parents=True, exist_ok=True)
 
+    methods = []
+    if run_pcn:
+        methods.append("pcn")
+    if run_mpcn:
+        methods.append("mpcn")
+    if run_mtpcn:
+        methods.append("mtpcn")
+
     run_config = {
         "dataset": "polar_twist",
         "algorithm": "polar_twist_rho_sweep",
-        "methods": ["mtpcn"],
+        "methods": methods,
         "data": data_config,
         "algorithm_config": algo_config,
         "execution": {
@@ -403,78 +412,127 @@ def main():
     rng_init = np.random.default_rng(seed_base)
     x0 = problem.sample_prior(rng_init)
 
-    grid = [(P, float(rho)) for P in P_list for rho in rho_list]
-    grid = grid[args.grid_index :: args.grid_count]
+    tasks = []
+    if run_pcn:
+        tasks.extend([("pcn", None, float(rho)) for rho in rho_list])
+    if run_mtpcn:
+        tasks.extend([("mtpcn", int(P), float(rho)) for P in P_list for rho in rho_list])
+    tasks = tasks[args.grid_index :: args.grid_count]
 
-    for P, rho in grid:
-        samples_path, metrics_path = chain_cache_paths(
-            estimations_dir, "mtpcn", rho=rho, seed_base=seed_base, P=P
-        )
-        loaded = load_chain_bundle(samples_path, metrics_path)
-        if loaded is not None:
-            chain, accept_rate, runtime_sec, metrics = loaded
-            if args.refresh_metrics_only or metrics is None or "ess_per_param" not in metrics:
-                metrics = summarize_chain_metrics(
-                    chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
+    for method, P, rho in tasks:
+        if method == "pcn":
+            samples_path, metrics_path = chain_cache_paths(
+                estimations_dir, "pcn", rho=rho, seed_base=seed_base
+            )
+            loaded = load_chain_bundle(samples_path, metrics_path)
+            if loaded is not None:
+                chain, accept_rate, runtime_sec, metrics = loaded
+                if args.refresh_metrics_only or metrics is None or "ess_per_param" not in metrics:
+                    metrics = summarize_chain_metrics(
+                        chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
+                    )
+                    save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
+                accept_display = np.nan if accept_rate is None else accept_rate
+                print(
+                    f"pCN loaded: rho={rho:.3f}, accept={accept_display:.3f}, runtime={runtime_sec:.2f}s"
                 )
-                save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
-            accept_display = np.nan if accept_rate is None else accept_rate
-            print(
-                f"mTPCN loaded: P={P}, rho={rho:.3f}, accept={accept_display:.3f}, runtime={runtime_sec:.2f}s"
-            )
-            continue
-        if args.refresh_metrics_only:
-            print(
-                f"mTPCN missing chain: P={P}, rho={rho:.3f} (skipping, refresh_metrics_only=True)"
-            )
-            continue
+                continue
+            if args.refresh_metrics_only:
+                print(
+                    f"pCN missing chain: rho={rho:.3f} (skipping, refresh_metrics_only=True)"
+                )
+                continue
 
-        seed = seed_base + int(P * 1000 + round(rho * 100))
-        progress_path = samples_path.with_suffix(".progress.json")
-        partial_samples_path = samples_path.with_name(f"{samples_path.stem}_partial.npz")
-        progress_payload_base = {
-            "dataset": "polar_twist",
-            "run_id": run_id,
-            "data_id": data_id,
-            "P": int(P),
-            "rho": float(rho),
-            "seed": int(seed),
-        }
-
-        if checkpoint_interval > 0:
-            chain, runtime_sec, accept_rate = run_mtpcn_chain_with_checkpoints(
-                problem,
-                x0,
-                n_iters,
-                rho=rho,
-                n_props=P,
-                seed=seed,
-                checkpoint_interval=checkpoint_interval,
-                progress_path=progress_path,
-                partial_samples_path=partial_samples_path,
-                progress_payload_base=progress_payload_base,
-            )
-        else:
+            seed = seed_base + int(round(rho * 1000))
             rng_chain = np.random.default_rng(seed)
             t0 = time.perf_counter()
-            chain, accept_rate = mtpcn_chain(
+            chain, accept_rate = pcn_chain(
                 x0,
                 problem,
                 rng_chain,
                 n_iters,
                 rho=rho,
-                n_props=P,
+                return_acceptance=True,
             )
             runtime_sec = time.perf_counter() - t0
+            metrics = summarize_chain_metrics(
+                chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
+            )
+            save_chain_bundle(samples_path, metrics_path, chain, accept_rate, runtime_sec, metrics)
+            print(
+                f"pCN done: rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
+            )
+            continue
 
-        metrics = summarize_chain_metrics(
-            chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
-        )
-        save_chain_bundle(samples_path, metrics_path, chain, accept_rate, runtime_sec, metrics)
+        if method == "mtpcn":
+            samples_path, metrics_path = chain_cache_paths(
+                estimations_dir, "mtpcn", rho=rho, seed_base=seed_base, P=P
+            )
+            loaded = load_chain_bundle(samples_path, metrics_path)
+            if loaded is not None:
+                chain, accept_rate, runtime_sec, metrics = loaded
+                if args.refresh_metrics_only or metrics is None or "ess_per_param" not in metrics:
+                    metrics = summarize_chain_metrics(
+                        chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
+                    )
+                    save_metrics_json(metrics_path, metrics, accept_rate, runtime_sec)
+                accept_display = np.nan if accept_rate is None else accept_rate
+                print(
+                    f"mTPCN loaded: P={P}, rho={rho:.3f}, accept={accept_display:.3f}, runtime={runtime_sec:.2f}s"
+                )
+                continue
+            if args.refresh_metrics_only:
+                print(
+                    f"mTPCN missing chain: P={P}, rho={rho:.3f} (skipping, refresh_metrics_only=True)"
+                )
+                continue
 
-        print(
-            f"mTPCN done: P={P}, rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
-        )
+            seed = seed_base + int(P * 1000 + round(rho * 100))
+            progress_path = samples_path.with_suffix(".progress.json")
+            partial_samples_path = samples_path.with_name(f"{samples_path.stem}_partial.npz")
+            progress_payload_base = {
+                "dataset": "polar_twist",
+                "run_id": run_id,
+                "data_id": data_id,
+                "P": int(P),
+                "rho": float(rho),
+                "seed": int(seed),
+            }
+
+            if checkpoint_interval > 0:
+                chain, runtime_sec, accept_rate = run_mtpcn_chain_with_checkpoints(
+                    problem,
+                    x0,
+                    n_iters,
+                    rho=rho,
+                    n_props=P,
+                    seed=seed,
+                    checkpoint_interval=checkpoint_interval,
+                    progress_path=progress_path,
+                    partial_samples_path=partial_samples_path,
+                    progress_payload_base=progress_payload_base,
+                )
+            else:
+                rng_chain = np.random.default_rng(seed)
+                t0 = time.perf_counter()
+                chain, accept_rate = mtpcn_chain(
+                    x0,
+                    problem,
+                    rng_chain,
+                    n_iters,
+                    rho=rho,
+                    n_props=P,
+                )
+                runtime_sec = time.perf_counter() - t0
+
+            metrics = summarize_chain_metrics(
+                chain, runtime_sec, burn_in=burn_in, max_lag=max_lag
+            )
+            save_chain_bundle(samples_path, metrics_path, chain, accept_rate, runtime_sec, metrics)
+
+            print(
+                f"mTPCN done: P={P}, rho={rho:.3f}, accept={accept_rate:.3f}, runtime={runtime_sec:.2f}s"
+            )
 
 
 if __name__ == "__main__":

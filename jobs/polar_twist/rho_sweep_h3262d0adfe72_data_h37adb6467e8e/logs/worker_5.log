@@ -7,41 +7,13 @@ checkpoint_interval: 10000
 data_id: data_h37adb6467e8e
 run_id: rho_sweep_h3262d0adfe72
 Run directory: /home/senng/multiproposal-internal/estimations/polar_twist/data_h37adb6467e8e/sweep/rho_sweep_h3262d0adfe72
-mTPCN loaded: P=10, rho=0.125, accept=0.498, runtime=23.50s
-mTPCN loaded: P=10, rho=0.325, accept=0.511, runtime=23.67s
-mTPCN loaded: P=10, rho=0.525, accept=0.538, runtime=29.08s
-mTPCN loaded: P=10, rho=0.725, accept=0.587, runtime=29.34s
 Estimating ESS for each parameter.
-mTPCN done: P=10, rho=0.925, accept=0.712, runtime=50.18s
+pCN done: rho=0.125, accept=0.109, runtime=2.20s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.100, accept=0.695, runtime=77.37s
+pCN done: rho=0.325, accept=0.115, runtime=2.21s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.300, accept=0.704, runtime=75.60s
+pCN done: rho=0.525, accept=0.125, runtime=2.21s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.500, accept=0.716, runtime=75.75s
+pCN done: rho=0.725, accept=0.152, runtime=2.23s
 Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.700, accept=0.743, runtime=76.25s
-Estimating ESS for each parameter.
-mTPCN done: P=30, rho=0.900, accept=0.805, runtime=76.07s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.075, accept=0.761, runtime=119.52s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.275, accept=0.765, runtime=117.97s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.475, accept=0.775, runtime=112.41s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.675, accept=0.791, runtime=115.96s
-Estimating ESS for each parameter.
-mTPCN done: P=50, rho=0.875, accept=0.830, runtime=149.41s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.050, accept=0.831, runtime=321.18s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.250, accept=0.832, runtime=260.90s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.450, accept=0.834, runtime=290.51s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.650, accept=0.838, runtime=318.13s
-mTPCN loaded: P=100, rho=0.850, accept=0.857, runtime=219.59s
-0.650, accept=0.838, runtime=221.97s
-Estimating ESS for each parameter.
-mTPCN done: P=100, rho=0.850, accept=0.857, runtime=219.59s
+pCN done: rho=0.925, accept=0.267, runtime=2.29s

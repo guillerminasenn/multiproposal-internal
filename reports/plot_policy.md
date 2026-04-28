@@ -5,6 +5,8 @@
 - Use LaTeX for symbols and indices: $\rho$, $x_1$, $x_2$.
 - Prefer a single shared legend for multi-panel figures.
 - Place legends outside the plotting area to avoid covering curves.
+- For proposal-count color maps in observable grids, map colors per plot so the
+  largest P in that plot is the lightest Viridis color.
 - For independent pCN aggregates, use a distinct linestyle (for example, dotted for mean and
 	dashed for max) and label them explicitly as "pCN indep".
 - For norms in LaTeX titles/labels, use a single bar like $|A|$ (avoid double bars).
